@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>まねっこポーズ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f7fb;
+  --card:#ffffff;
+  --line:#d8e0ea;
+  --text:#2b3445;
+  --sub:#5c6b80;
+  --main:#2f7fd8;
+  --main-dark:#2466b3;
+  --ok:#23a061;
+  --ok-bg:#e3f5ea;
+  --soft:#eef4fb;
+  --next:#6b7a90;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:"BIZ UDPGothic",sans-serif;
+  background:var(--bg);color:var(--text);
+  -webkit-user-select:none;user-select:none;
+  -webkit-touch-callout:none;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
+ruby rt{font-size:0.5em;font-weight:400}
+button{
+  font-family:inherit;color:inherit;cursor:pointer;
+  min-width:44px;min-height:44px;
+  border:none;border-radius:14px;
+  touch-action:manipulation;
+}
+button:disabled{opacity:.4;cursor:default}
+.btn-main{
+  background:var(--main);color:#fff;font-weight:700;
+  font-size:clamp(22px,3.2vw,34px);padding:16px 48px;
+  box-shadow:0 4px 0 var(--main-dark);
+}
+.btn-main:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 var(--main-dark)}
+.btn-sub{
+  background:var(--card);border:2px solid var(--line);
+  font-size:clamp(17px,2.2vw,22px);font-weight:700;padding:10px 22px;
+}
+.btn-icon{
+  width:56px;height:56px;background:var(--card);border:2px solid var(--line);
+  display:flex;align-items:center;justify-content:center;
+}
+.btn-icon svg{width:30px;height:30px;stroke:var(--sub)}
+
+.screen{position:fixed;inset:0;display:none;flex-direction:column;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.screen.show{display:flex}
+
+/* スタート */
+#s-start{align-items:center;justify-content:center;gap:28px;text-align:center}
+#s-start .topbtns{position:absolute;top:calc(16px + env(safe-area-inset-top));right:calc(16px + env(safe-area-inset-right));display:flex;gap:12px}
+#s-start h1{font-size:clamp(40px,7vw,72px);color:var(--main);letter-spacing:.05em}
+#s-start .lead{font-size:clamp(18px,2.6vw,26px);color:var(--sub);line-height:1.8}
+#startFigure{width:min(260px,40vw);height:min(220px,30vh)}
+
+/* カメラ確認 */
+#s-check{padding:16px;gap:12px;align-items:center}
+#s-check .msg{font-size:clamp(20px,3vw,30px);font-weight:700;text-align:center;min-height:2.6em;display:flex;align-items:center;justify-content:center;line-height:1.5}
+#s-check .msg.ok{color:var(--ok)}
+.camwrap{flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center;position:relative}
+.camwrap canvas{max-width:100%;max-height:100%;border-radius:16px;background:#dfe6ef;display:block}
+#s-check .row{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
+
+/* 活動 */
+#s-play{padding:10px 14px;gap:10px}
+.playhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.count{font-size:clamp(17px,2.2vw,22px);font-weight:700;color:var(--sub);background:var(--card);border:2px solid var(--line);border-radius:12px;padding:8px 14px;white-space:nowrap}
+.posename{flex:1;font-size:clamp(26px,4vw,42px);font-weight:700;color:var(--main);text-align:center;min-width:8em}
+.playhead .btns{display:flex;gap:8px}
+.playmain{flex:1;min-height:0;display:flex;gap:12px}
+.panel{background:var(--card);border:2px solid var(--line);border-radius:18px;position:relative;min-height:0;min-width:0;display:flex;flex-direction:column}
+.panel .ptitle{font-size:clamp(15px,1.9vw,19px);font-weight:700;color:var(--sub);padding:8px 12px 0}
+#targetPanel{flex:0 0 34%}
+#camPanel{flex:1}
+#targetCanvas{flex:1;width:100%;min-height:0;display:block}
+#camPanel .camwrap{padding:8px}
+.parts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;padding:6px 8px 10px}
+.part{font-size:clamp(14px,1.8vw,18px);font-weight:700;padding:6px 10px;border-radius:10px;background:var(--soft);color:var(--sub);border:2px solid var(--line);white-space:nowrap}
+.part.ok{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.part.off{display:none}
+.playfoot{display:flex;align-items:center;gap:14px}
+.holdmsg{font-size:clamp(20px,2.8vw,28px);font-weight:700;min-width:9em;text-align:center}
+.holdmsg.ok{color:var(--ok)}
+.bars{flex:1;display:flex;flex-direction:column;gap:6px}
+.bar{height:22px;background:var(--soft);border:2px solid var(--line);border-radius:12px;overflow:hidden}
+.bar>div{height:100%;width:0;background:var(--ok);border-radius:10px}
+.timebar{display:flex;align-items:center;gap:8px;font-size:clamp(14px,1.8vw,17px);color:var(--sub);font-weight:700}
+.timebar .bar{flex:1;height:12px}
+.timebar .bar>div{background:#9db8d8}
+@media (orientation:portrait){
+  .playmain{flex-direction:column}
+  #targetPanel{flex:0 0 32%}
+}
+
+/* フィードバック */
+.feedback{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:20;pointer-events:none}
+.feedback.show{display:flex}
+.feedback .box{background:rgba(255,255,255,.95);border-radius:28px;padding:30px 56px;text-align:center;border:4px solid var(--ok);box-shadow:0 8px 30px rgba(0,0,0,.12)}
+.feedback .mark{width:120px;height:120px;margin:0 auto 6px;display:block}
+.feedback .ftext{font-size:clamp(40px,7vw,72px);font-weight:700;color:var(--ok)}
+.feedback.next .box{border-color:var(--next)}
+.feedback.next .ftext{color:var(--next);font-size:clamp(28px,4.6vw,46px)}
+
+/* 結果 */
+#s-result{align-items:center;padding:24px 16px;gap:18px;overflow-y:auto}
+#s-result h2{font-size:clamp(28px,4.4vw,44px);color:var(--main)}
+.score{font-size:clamp(22px,3vw,30px);font-weight:700;text-align:center}
+.score b{font-size:2em;color:var(--ok)}
+.rmsg{font-size:clamp(20px,2.8vw,28px);font-weight:700;color:var(--sub)}
+.rlist{width:min(620px,100%);display:flex;flex-direction:column;gap:8px}
+.ritem{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--card);border:2px solid var(--line);border-radius:14px;padding:10px 18px;font-size:clamp(18px,2.4vw,24px);font-weight:700}
+.ritem .st{font-size:.85em;padding:4px 12px;border-radius:10px;white-space:nowrap}
+.ritem .st.ok{background:var(--ok-bg);color:var(--ok)}
+.ritem .st.ng{background:var(--soft);color:var(--next)}
+#s-result .row{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;padding-bottom:12px}
+
+/* モーダル */
+.modal{position:fixed;inset:0;background:rgba(30,40,60,.35);display:none;align-items:center;justify-content:center;z-index:30;padding:16px}
+.modal.show{display:flex}
+.mbox{background:var(--card);border-radius:20px;width:min(640px,100%);max-height:100%;overflow-y:auto;padding:22px 24px;display:flex;flex-direction:column;gap:16px}
+.mbox h3{font-size:24px;color:var(--main)}
+.help li{font-size:clamp(18px,2.4vw,22px);line-height:1.9;margin-left:1.3em}
+.checkline{display:flex;align-items:center;gap:10px;font-size:18px;min-height:44px}
+.checkline input{width:28px;height:28px}
+.set-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:12px}
+.set-row .lbl{font-size:18px;font-weight:700}
+.set-row .lbl small{display:block;font-weight:400;font-size:14px;color:var(--sub)}
+.stepper{display:flex;align-items:center;gap:6px}
+.stepper button{width:48px;height:48px;background:var(--soft);border:2px solid var(--line);font-size:20px;color:var(--main)}
+.stepper input{width:72px;height:48px;text-align:center;font-family:inherit;font-size:22px;font-weight:700;border:2px solid var(--line);border-radius:12px;-webkit-user-select:text;user-select:text}
+.stepper .unit{font-size:17px;min-width:2.5em}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{background:var(--soft);border:2px solid var(--line);font-size:17px;font-weight:700;padding:8px 14px}
+.seg button.on{background:var(--main);border-color:var(--main);color:#fff}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chips button{background:var(--soft);border:2px solid var(--line);font-size:16px;font-weight:700;padding:8px 12px}
+.chips button.on{background:#dceafa;border-color:var(--main);color:var(--main-dark)}
+.mfoot{display:flex;justify-content:flex-end}
+
+.errbox{display:none;flex-direction:column;align-items:center;gap:14px;text-align:center;background:var(--card);border:2px solid var(--line);border-radius:18px;padding:20px;font-size:18px;line-height:1.7}
+.errbox.show{display:flex}
+.errbox small{color:var(--sub);font-size:15px}
+
+#video{position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none}
+</style>
+</head>
+<body>
+
+<!-- スタート画面 -->
+<section id="s-start" class="screen show">
+  <div class="topbtns">
+    <button class="btn-icon" id="helpBtn" aria-label="つかいかた">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"/><circle cx="12" cy="17.5" r=".6" fill="currentColor"/></svg>
+    </button>
+    <button class="btn-icon" id="setBtn" aria-label="設定">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </button>
+  </div>
+  <canvas id="startFigure"></canvas>
+  <h1>まねっこポーズ</h1>
+  <p class="lead">お<ruby>手本<rt>てほん</rt></ruby>と おなじポーズを してみよう。<br>「スタート」を おすと はじまるよ。</p>
+  <button class="btn-main" id="startBtn">スタート</button>
+</section>
+
+<!-- カメラ確認画面 -->
+<section id="s-check" class="screen">
+  <div class="msg" id="checkMsg">じゅんびしているよ…</div>
+  <div class="camwrap"><canvas id="checkCanvas"></canvas></div>
+  <div class="errbox" id="errBox">
+    <div id="errText">カメラが つかえないよ。</div>
+    <small id="errDetail"></small>
+    <div class="row">
+      <button class="btn-sub" id="retryBtn">もういちど ためす</button>
+      <button class="btn-sub" id="errBackBtn">もどる</button>
+    </div>
+  </div>
+  <div class="row" id="checkBtns">
+    <button class="btn-sub" id="checkBackBtn">もどる</button>
+    <button class="btn-main" id="goBtn" disabled>はじめる</button>
+  </div>
+</section>
+
+<!-- 活動画面 -->
+<section id="s-play" class="screen">
+  <div class="playhead">
+    <div class="count" id="countText">1 / 5</div>
+    <div class="posename" id="poseName"></div>
+    <div class="btns">
+      <button class="btn-sub" id="skipBtn">つぎへ</button>
+      <button class="btn-sub" id="quitBtn">おわる</button>
+    </div>
+  </div>
+  <div class="playmain">
+    <div class="panel" id="targetPanel">
+      <div class="ptitle">お<ruby>手本<rt>てほん</rt></ruby></div>
+      <canvas id="targetCanvas"></canvas>
+    </div>
+    <div class="panel" id="camPanel">
+      <div class="ptitle">じぶん</div>
+      <div class="camwrap"><canvas id="playCanvas"></canvas></div>
+      <div class="parts">
+        <div class="part" id="p-ra"><ruby>右<rt>みぎ</rt></ruby>うで まだ</div>
+        <div class="part" id="p-la"><ruby>左<rt>ひだり</rt></ruby>うで まだ</div>
+        <div class="part" id="p-rl"><ruby>右<rt>みぎ</rt></ruby>あし まだ</div>
+        <div class="part" id="p-ll"><ruby>左<rt>ひだり</rt></ruby>あし まだ</div>
+      </div>
+    </div>
+  </div>
+  <div class="playfoot">
+    <div class="holdmsg" id="holdMsg">おなじポーズを してね</div>
+    <div class="bars">
+      <div class="bar"><div id="holdBar"></div></div>
+      <div class="timebar" id="timeRow"><span id="timeText">のこり30秒</span><div class="bar"><div id="timeBar"></div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 結果画面 -->
+<section id="s-result" class="screen">
+  <h2>けっか</h2>
+  <div class="score">できたポーズ <b id="scoreNum">0</b> / <span id="scoreAll">0</span></div>
+  <div class="rmsg" id="resultMsg"></div>
+  <div class="rlist" id="resultList"></div>
+  <div class="row">
+    <button class="btn-sub" id="homeBtn">はじめに もどる</button>
+    <button class="btn-main" id="againBtn">もういちど</button>
+  </div>
+</section>
+
+<!-- フィードバック表示 -->
+<div class="feedback" id="feedback">
+  <div class="box">
+    <svg class="mark" id="fbMark" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="#23a061" stroke-width="12"/></svg>
+    <div class="ftext" id="fbText">できた!</div>
+  </div>
+</div>
+
+<!-- つかいかた -->
+<div class="modal" id="helpModal">
+  <div class="mbox">
+    <h3>つかいかた</h3>
+    <ol class="help">
+      <li>iPadを <ruby>立<rt>た</rt></ruby>てて おいてね。</li>
+      <li>2mぐらい はなれて、あたまから <ruby>足<rt>あし</rt></ruby>まで うつるように してね。</li>
+      <li>お<ruby>手本<rt>てほん</rt></ruby>と おなじポーズを して、しばらく そのままで いてね。</li>
+      <li>うまく できると「できた!」が でるよ。</li>
+    </ol>
+    <label class="checkline"><input type="checkbox" id="helpHide"><span><ruby>次<rt>つぎ</rt></ruby>から <ruby>出<rt>だ</rt></ruby>さない</span></label>
+    <div class="mfoot"><button class="btn-main" id="helpClose" style="padding:10px 36px;font-size:22px">とじる</button></div>
+  </div>
+</div>
+
+<!-- 設定(教員用) -->
+<div class="modal" id="setModal">
+  <div class="mbox">
+    <h3>設定</h3>
+    <div class="set-row"><div class="lbl">問題数</div><div class="stepper" id="st-count"></div></div>
+    <div class="set-row"><div class="lbl">「できた」までの時間<small>ポーズを続ける秒数</small></div><div class="stepper" id="st-hold"></div></div>
+    <div class="set-row"><div class="lbl">1問の制限時間<small>0にすると制限なし</small></div><div class="stepper" id="st-limit"></div></div>
+    <div class="set-row"><div class="lbl">判定のきびしさ</div><div class="seg" id="sg-level"></div></div>
+    <div class="set-row"><div class="lbl">判定する部分<small>座ったまま行うときは「うでだけ」</small></div><div class="seg" id="sg-part"></div></div>
+    <div class="set-row"><div class="lbl">出す順番</div><div class="seg" id="sg-order"></div></div>
+    <div class="set-row"><div class="lbl">カメラ映像<small>「線だけ」にすると姿は表示しない</small></div><div class="seg" id="sg-video"></div></div>
+    <div class="set-row"><div class="lbl">効果音</div><div class="seg" id="sg-sound"></div></div>
+    <div class="set-row"><div class="lbl">読み上げ</div><div class="seg" id="sg-voice"></div></div>
+    <div class="set-row" style="flex-direction:column;align-items:stretch"><div class="lbl">使うポーズ<small>押して選ぶ(1つ以上)</small></div><div class="chips" id="poseChips"></div></div>
+    <div class="mfoot"><button class="btn-main" id="setClose" style="padding:10px 36px;font-size:22px">とじる</button></div>
+  </div>
+</div>
+
+<video id="video" playsinline muted autoplay></video>
+
+<script type="module">
+/* ===== 定数 ===== */
+const MP_VER = '0.10.14';
+const MP_BASE = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VER}`;
+const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task';
+
+/* 画面(鏡うつし)で見たときの部位。
+   画面の左側 = 本人の右側。角度は 0=右向き 90=下 180=左 270=上 */
+const SEGS = {
+  la1:[12,14], la2:[14,16],  // 画面左のうで(本人の右うで)
+  ra1:[11,13], ra2:[13,15],  // 画面右のうで(本人の左うで)
+  ll1:[24,26], ll2:[26,28],  // 画面左のあし(本人の右あし)
+  rl1:[23,25], rl2:[25,27],  // 画面右のあし(本人の左あし)
+};
+const STAND = {ll1:95, ll2:93, rl1:85, rl2:87};
+const POSES = [
+  {id:'kiotsuke', name:'<ruby>気<rt>き</rt></ruby>をつけ', say:'きをつけ', a:{la1:97,la2:95,ra1:83,ra2:85,...STAND}},
+  {id:'banzai', name:'ばんざい', say:'ばんざい', a:{la1:255,la2:262,ra1:285,ra2:278,...STAND}},
+  {id:'yoko', name:'<ruby>両手<rt>りょうて</rt></ruby>を <ruby>横<rt>よこ</rt></ruby>に', say:'りょうてを よこに', a:{la1:180,la2:180,ra1:0,ra2:0,...STAND}},
+  {id:'migite', name:'<ruby>右手<rt>みぎて</rt></ruby>を <ruby>上<rt>うえ</rt></ruby>に', say:'みぎてを うえに', a:{la1:265,la2:268,ra1:83,ra2:85,...STAND}},
+  {id:'hidarite', name:'<ruby>左手<rt>ひだりて</rt></ruby>を <ruby>上<rt>うえ</rt></ruby>に', say:'ひだりてを うえに', a:{la1:97,la2:95,ra1:275,ra2:272,...STAND}},
+  {id:'maru', name:'あたまの <ruby>上<rt>うえ</rt></ruby>で まる', say:'あたまの うえで まる', a:{la1:228,la2:318,ra1:312,ra2:222,...STAND}},
+  {id:'guts', name:'ガッツポーズ', say:'ガッツポーズ', a:{la1:180,la2:270,ra1:0,ra2:270,...STAND}},
+  {id:'koshi', name:'こしに <ruby>手<rt>て</rt></ruby>', say:'こしに て', a:{la1:120,la2:55,ra1:60,ra2:125,...STAND}},
+  {id:'naname', name:'ななめの ポーズ', say:'ななめの ポーズ', a:{la1:225,la2:225,ra1:45,ra2:45,...STAND}},
+  {id:'daiji', name:'<ruby>大<rt>だい</rt></ruby>の<ruby>字<rt>じ</rt></ruby>', say:'だいのじ', a:{la1:215,la2:215,ra1:325,ra2:325,ll1:122,ll2:122,rl1:58,rl2:58}},
+  {id:'migiashi', name:'<ruby>右<rt>みぎ</rt></ruby><ruby>足<rt>あし</rt></ruby>を <ruby>横<rt>よこ</rt></ruby>に', say:'みぎあしを よこに', legs:true, a:{la1:180,la2:180,ra1:0,ra2:0,ll1:135,ll2:135,rl1:88,rl2:88}},
+  {id:'hidariashi', name:'<ruby>左<rt>ひだり</rt></ruby><ruby>足<rt>あし</rt></ruby>を <ruby>横<rt>よこ</rt></ruby>に', say:'ひだりあしを よこに', legs:true, a:{la1:180,la2:180,ra1:0,ra2:0,ll1:92,ll2:92,rl1:45,rl2:45}},
+];
+const TOL = {easy:40, normal:30, hard:22};
+
+/* ===== 設定 ===== */
+const DEFAULTS = {count:5, hold:2, limit:30, level:'normal', part:'full', order:'random', video:true, sound:true, voice:true, poses:POSES.map(p=>p.id)};
+const KEY = 'manekko_settings_v1', HELP_KEY = 'manekko_help_hide';
+function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+let S = {...DEFAULTS};
+try{ const s = JSON.parse(lsGet(KEY)||'null'); if(s) S = {...DEFAULTS, ...s}; }catch(e){}
+S.poses = (S.poses||[]).filter(id=>POSES.some(p=>p.id===id));
+if(!S.poses.length) S.poses = DEFAULTS.poses.slice();
+function saveS(){ lsSet(KEY, JSON.stringify(S)); }
+
+/* ===== 要素 ===== */
+const $ = id => document.getElementById(id);
+const video = $('video');
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('show', s.id===id));
+}
+
+/* ===== 音 ===== */
+let actx = null;
+let jaVoice = null;
+function pickVoice(){
+  try{
+    const vs = speechSynthesis.getVoices();
+    jaVoice = vs.find(v=>v.lang==='ja-JP') || vs.find(v=>/^ja/i.test(v.lang)) || jaVoice;
+  }catch(e){}
+}
+if('speechSynthesis' in window){
+  pickVoice();
+  speechSynthesis.addEventListener?.('voiceschanged', pickVoice);
+}
+/* タップ処理のいちばん最初に同期的に呼ぶ(iOSの音声解錠) */
+function unlockAudio(){
+  try{
+    if('speechSynthesis' in window){
+      const u = new SpeechSynthesisUtterance('');
+      u.volume = 0;
+      speechSynthesis.speak(u);
+    }
+  }catch(e){}
+  try{
+    if(!actx){ const C = window.AudioContext||window.webkitAudioContext; if(C) actx = new C(); }
+    if(actx && actx.state==='suspended') actx.resume();
+  }catch(e){}
+}
+function speak(text){
+  if(!S.voice || !('speechSynthesis' in window)) return;
+  try{
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ja-JP';
+    if(jaVoice) u.voice = jaVoice;
+    u.rate = 0.95;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+function tone(freq, start, dur, vol=0.15){
+  if(!actx) return;
+  const t = actx.currentTime + start;
+  const o = actx.createOscillator(), g = actx.createGain();
+  o.type = 'sine'; o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t+0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+  o.connect(g); g.connect(actx.destination);
+  o.start(t); o.stop(t+dur+0.05);
+}
+function sePon(){ if(S.sound) tone(660,0,0.25,0.12); }
+function seOk(){ if(S.sound){ tone(784,0,0.3); tone(988,0.12,0.3); tone(1318,0.24,0.5); } }
+function seNext(){ if(S.sound) tone(523,0,0.35,0.08); }
+
+/* ===== 図形計算 ===== */
+function angDiff(a,b){ const d = ((a-b)%360+540)%360-180; return Math.abs(d); }
+function rad(d){ return d*Math.PI/180; }
+
+/* 角度から棒人間の点を作る(単位:胴の長さ=1) */
+function figurePoints(a){
+  const P = {};
+  P.ls = [-0.33,0]; P.rs = [0.33,0];          // 画面左右の肩
+  P.lh = [-0.2,1];  P.rh = [0.2,1];            // 画面左右のこし
+  P.head = [0,-0.38];
+  const add = (p,ang,len)=>[p[0]+Math.cos(rad(ang))*len, p[1]+Math.sin(rad(ang))*len];
+  P.le = add(P.ls,a.la1,0.52); P.lw = add(P.le,a.la2,0.48);
+  P.re = add(P.rs,a.ra1,0.52); P.rw = add(P.re,a.ra2,0.48);
+  P.lk = add(P.lh,a.ll1,0.62); P.la = add(P.lk,a.ll2,0.6);
+  P.rk = add(P.rh,a.rl1,0.62); P.ra = add(P.rk,a.rl2,0.6);
+  return P;
+}
+const FIG_SEGS = [['la1','ls','le'],['la2','le','lw'],['ra1','rs','re'],['ra2','re','rw'],['ll1','lh','lk'],['ll2','lk','la'],['rl1','rh','rk'],['rl2','rk','ra']];
+
+function drawFigure(cv, a, okMap, opts={}){
+  const dpr = window.devicePixelRatio||1;
+  const w = cv.clientWidth, h = cv.clientHeight;
+  if(!w || !h) return;
+  if(cv.width !== Math.round(w*dpr) || cv.height !== Math.round(h*dpr)){ cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr); }
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,w,h);
+  const P = figurePoints(a);
+  const headR = 0.2;
+  let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+  for(const k in P){ const [x,y]=P[k]; x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y); }
+  y0 = Math.min(y0, P.head[1]-headR);
+  const pad = 0.18;
+  const sc = Math.min(w/(x1-x0+pad*2), h/(y1-y0+pad*2));
+  const ox = w/2 - (x0+x1)/2*sc, oy = h/2 - (y0+y1)/2*sc;
+  const T = p=>[ox+p[0]*sc, oy+p[1]*sc];
+  const lw = Math.max(6, sc*0.11);
+  const base = opts.color || '#2f7fd8';
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  // 胴
+  ctx.strokeStyle = '#9fb3cc'; ctx.lineWidth = lw;
+  const ls=T(P.ls), rs=T(P.rs), lh=T(P.lh), rh=T(P.rh);
+  ctx.beginPath(); ctx.moveTo(ls[0],ls[1]); ctx.lineTo(rs[0],rs[1]); ctx.lineTo(rh[0],rh[1]); ctx.lineTo(lh[0],lh[1]); ctx.closePath(); ctx.stroke();
+  ctx.fillStyle = '#e4ebf4'; ctx.fill();
+  // 頭
+  const hd = T(P.head);
+  ctx.beginPath(); ctx.arc(hd[0],hd[1],headR*sc,0,Math.PI*2); ctx.fillStyle='#e4ebf4'; ctx.fill(); ctx.stroke();
+  // うで・あし
+  for(const [k,p,q] of FIG_SEGS){
+    const A=T(P[p]), B=T(P[q]);
+    let col = base;
+    if(okMap){ if(okMap[k]===true) col='#23a061'; else if(okMap[k]===null) col='#c3cfdd'; }
+    ctx.strokeStyle = col; ctx.lineWidth = lw;
+    ctx.beginPath(); ctx.moveTo(A[0],A[1]); ctx.lineTo(B[0],B[1]); ctx.stroke();
+  }
+  // 関節
+  ctx.fillStyle = '#ffffff';
+  for(const k of ['le','re','lk','rk','lw','rw']){ const p=T(P[k]); ctx.beginPath(); ctx.arc(p[0],p[1],lw*0.28,0,Math.PI*2); ctx.fill(); }
+}
+
+/* ===== カメラ・姿勢検出 ===== */
+let stream = null, landmarker = null;
+let lm = null, lostT = 0, lastVT = -1;
+
+async function ensureCamera(){
+  if(stream && stream.active) return;
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('NOCAM');
+  stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user', width:{ideal:1280}, height:{ideal:720}}, audio:false});
+  video.srcObject = stream;
+  try{ await video.play(); }catch(e){}
+  const t0 = performance.now();
+  while(!video.videoWidth){
+    if(performance.now()-t0 > 8000) throw new Error('NOVIDEO');
+    await new Promise(r=>setTimeout(r,100));
+  }
+}
+async function ensureModel(){
+  if(landmarker) return;
+  const vision = await import(`${MP_BASE}/vision_bundle.mjs`);
+  const files = await vision.FilesetResolver.forVisionTasks(`${MP_BASE}/wasm`);
+  const opt = d=>({baseOptions:{modelAssetPath:MODEL_URL, delegate:d}, runningMode:'VIDEO', numPoses:1,
+    minPoseDetectionConfidence:0.5, minPosePresenceConfidence:0.5, minTrackingConfidence:0.5});
+  try{ landmarker = await vision.PoseLandmarker.createFromOptions(files, opt('GPU')); }
+  catch(e){ landmarker = await vision.PoseLandmarker.createFromOptions(files, opt('CPU')); }
+}
+function detect(dt){
+  if(!landmarker || video.readyState < 2) return;
+  if(video.currentTime === lastVT) return;
+  lastVT = video.currentTime;
+  let res;
+  try{ res = landmarker.detectForVideo(video, performance.now()); }catch(e){ return; }
+  const L = res && res.landmarks && res.landmarks[0];
+  if(L){
+    lostT = 0;
+    if(!lm) lm = L.map(p=>({x:p.x,y:p.y,v:p.visibility??1}));
+    else{
+      const k = 0.55;
+      for(let i=0;i<L.length;i++){
+        lm[i].x += (L[i].x-lm[i].x)*k;
+        lm[i].y += (L[i].y-lm[i].y)*k;
+        lm[i].v = L[i].visibility??1;
+      }
+    }
+  }else{
+    lostT += dt;
+    if(lostT > 0.4) lm = null;
+  }
+}
+/* 画面(鏡うつし)のピクセル座標 */
+function sp(i){ const W=video.videoWidth, H=video.videoHeight; return [(1-lm[i].x)*W, lm[i].y*H]; }
+function vis(i){ const p=lm[i]; return p.v>0.5 && p.x>0.01 && p.x<0.99 && p.y>0.01 && p.y<0.99; }
+
+function useLegs(){ return S.part==='full'; }
+/* 部位ごとの判定: true=あってる false=ちがう null=判定しない */
+function judge(target){
+  const tol = TOL[S.level]||30;
+  const ok = {};
+  for(const k in SEGS){
+    if(!useLegs() && k[1]==='l'){ ok[k]=null; continue; }
+    if(!lm){ ok[k]=false; continue; }
+    const [i,j] = SEGS[k];
+    if(!vis(i)||!vis(j)){ ok[k]=false; continue; }
+    const a=sp(i), b=sp(j);
+    const ang = Math.atan2(b[1]-a[1], b[0]-a[0])*180/Math.PI;
+    ok[k] = angDiff(ang, target[k]) <= tol;
+  }
+  return ok;
+}
+
+const BONES = [[11,12],[11,23],[12,24],[23,24],[12,14],[14,16],[11,13],[13,15],[24,26],[26,28],[23,25],[25,27]];
+const BONE_SEG = {'12-14':'la1','14-16':'la2','11-13':'ra1','13-15':'ra2','24-26':'ll1','26-28':'ll2','23-25':'rl1','25-27':'rl2'};
+function drawCam(cv, okMap){
+  const W = video.videoWidth, H = video.videoHeight;
+  if(!W) return;
+  if(cv.width!==W || cv.height!==H){ cv.width=W; cv.height=H; }
+  const ctx = cv.getContext('2d');
+  if(S.video){
+    ctx.save(); ctx.translate(W,0); ctx.scale(-1,1); ctx.drawImage(video,0,0,W,H); ctx.restore();
+  }else{
+    ctx.fillStyle='#e9eef5'; ctx.fillRect(0,0,W,H);
+  }
+  if(!lm) return;
+  const lw = Math.max(6, H*0.016);
+  ctx.lineCap='round';
+  for(const [i,j] of BONES){
+    if(lm[i].v<0.4 || lm[j].v<0.4) continue;
+    const a=sp(i), b=sp(j);
+    const seg = BONE_SEG[i+'-'+j];
+    let col = '#ffffff';
+    if(okMap && seg){ if(okMap[seg]===true) col='#23a061'; else if(okMap[seg]===false) col='#ffffff'; else col='rgba(255,255,255,.5)'; }
+    ctx.strokeStyle='rgba(20,40,70,.55)'; ctx.lineWidth=lw+5;
+    ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke();
+    ctx.strokeStyle=col; ctx.lineWidth=lw;
+    ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke();
+  }
+  if(lm[0].v>0.4){
+    const n=sp(0), s1=sp(11), s2=sp(12);
+    const r = Math.max(14, Math.hypot(s1[0]-s2[0], s1[1]-s2[1])*0.35);
+    ctx.strokeStyle='rgba(20,40,70,.55)'; ctx.lineWidth=lw*0.6+5;
+    ctx.beginPath(); ctx.arc(n[0],n[1],r,0,Math.PI*2); ctx.stroke();
+    ctx.strokeStyle='#ffffff'; ctx.lineWidth=lw*0.6;
+    ctx.beginPath(); ctx.arc(n[0],n[1],r,0,Math.PI*2); ctx.stroke();
+  }
+}
+
+/* ===== ループ ===== */
+let running = false, mode = '', lastT = 0;
+function startLoop(m){
+  mode = m;
+  if(running) return;
+  running = true; lastT = performance.now();
+  requestAnimationFrame(loop);
+}
+function stopLoop(){ running = false; mode=''; }
+function loop(t){
+  if(!running) return;
+  const dt = Math.min(0.1, Math.max(0,(t-lastT)/1000)); lastT = t;
+  detect(dt);
+  if(mode==='check') updateCheck(dt);
+  else if(mode==='play') updatePlay(dt);
+  requestAnimationFrame(loop);
+}
+
+/* ===== カメラ確認 ===== */
+let checkOkT = 0;
+function bodyVisible(){
+  if(!lm) return false;
+  const need = useLegs() ? [0,11,12,23,24,25,26,27,28] : [0,11,12,13,14,15,16];
+  return need.every(vis);
+}
+function updateCheck(dt){
+  drawCam($('checkCanvas'), null);
+  const msg = $('checkMsg');
+  if(!lm){
+    checkOkT = 0;
+    msg.className='msg'; msg.innerHTML='カメラの <ruby>前<rt>まえ</rt></ruby>に <ruby>立<rt>た</rt></ruby>ってね';
+  }else if(!bodyVisible()){
+    checkOkT = 0;
+    msg.className='msg';
+    msg.innerHTML = useLegs() ? 'あたまから <ruby>足<rt>あし</rt></ruby>まで うつるように、すこし はなれてね' : 'あたまと りょうてが うつるように してね';
+  }else{
+    checkOkT += dt;
+    if(checkOkT > 0.5){
+      msg.className='msg ok'; msg.innerHTML='うつったよ!「はじめる」を おしてね';
+      $('goBtn').disabled = false;
+    }
+  }
+}
+async function goCheck(){
+  show('s-check');
+  $('errBox').classList.remove('show');
+  $('checkBtns').style.display='flex';
+  $('checkCanvas').parentElement.style.display='flex';
+  $('goBtn').disabled = true; checkOkT = 0;
+  const msg = $('checkMsg'); msg.className='msg'; msg.innerHTML='じゅんびしているよ…';
+  try{
+    await ensureCamera();
+    msg.innerHTML='じゅんびしているよ… もうすこし まってね';
+    await ensureModel();
+  }catch(e){
+    showErr(e);
+    return;
+  }
+  startLoop('check');
+}
+function showErr(e){
+  stopLoop();
+  $('checkMsg').innerHTML='';
+  $('checkBtns').style.display='none';
+  $('checkCanvas').parentElement.style.display='none';
+  $('errBox').classList.add('show');
+  const name = (e && (e.name||e.message)) || '';
+  let t = 'カメラが つかえないよ。<br>せんせいに しらせてね。', d = '';
+  if(/NotAllowed|Permission/i.test(name)) d = '(教員の方へ)カメラの使用が許可されていません。Safariの設定でカメラを「許可」にしてください。';
+  else if(/NOCAM|NotFound|NOVIDEO/i.test(name)) d = '(教員の方へ)カメラが見つかりません。この画面のプレビュー内では動かないことがあるため、公開URLをSafariで開いてください。';
+  else d = '(教員の方へ)姿勢判定の読み込みに失敗しました。ネットワーク(cdn.jsdelivr.net / storage.googleapis.com への接続)を確認してください。';
+  $('errText').innerHTML = t; $('errDetail').textContent = d;
+}
+
+/* ===== 活動 ===== */
+const G = {list:[], idx:0, hold:0, elapsed:0, grace:0, phase:'pose', fbT:0, results:[], lastSec:-1};
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function makeList(){
+  let pool = POSES.filter(p=>S.poses.includes(p.id));
+  if(!useLegs()){ const np = pool.filter(p=>!p.legs); if(np.length) pool = np; }
+  const out = [];
+  while(out.length < S.count){
+    const batch = S.order==='random' ? shuffle(pool.slice()) : pool.slice();
+    if(out.length && batch.length>1 && batch[0]===out[out.length-1]) batch.push(batch.shift());
+    out.push(...batch);
+  }
+  return out.slice(0, S.count);
+}
+let wakeLock = null;
+async function keepAwake(){ try{ if('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); }catch(e){} }
+function releaseAwake(){ try{ wakeLock && wakeLock.release(); }catch(e){} wakeLock = null; }
+
+function startGame(){
+  G.list = makeList(); G.idx = 0; G.results = [];
+  show('s-play');
+  ['p-ll','p-rl'].forEach(id=>$(id).classList.toggle('off', !useLegs()));
+  $('timeRow').style.display = S.limit>0 ? 'flex' : 'none';
+  startPose();
+  startLoop('play');
+  keepAwake();
+}
+function startPose(){
+  const p = G.list[G.idx];
+  G.hold = 0; G.elapsed = 0; G.grace = 1.0; G.phase='pose'; G.lastSec=-1;
+  $('countText').textContent = `${G.idx+1} / ${G.list.length}`;
+  $('poseName').innerHTML = p.name;
+  $('feedback').classList.remove('show');
+  sePon();
+  speak(p.say);
+}
+function setPart(id, ok, label){
+  const el = $(id);
+  el.classList.toggle('ok', ok);
+  el.innerHTML = label + (ok ? ' OK' : ' まだ');
+}
+function updatePlay(dt){
+  const p = G.list[G.idx];
+  if(!p) return;
+  const okMap = judge(p.a);
+  drawCam($('playCanvas'), okMap);
+  drawFigure($('targetCanvas'), p.a, okMap);
+
+  const both = (a,b)=> okMap[a]!==false && okMap[b]!==false;
+  setPart('p-ra', both('la1','la2'), '<ruby>右<rt>みぎ</rt></ruby>うで');
+  setPart('p-la', both('ra1','ra2'), '<ruby>左<rt>ひだり</rt></ruby>うで');
+  if(useLegs()){
+    setPart('p-rl', both('ll1','ll2'), '<ruby>右<rt>みぎ</rt></ruby>あし');
+    setPart('p-ll', both('rl1','rl2'), '<ruby>左<rt>ひだり</rt></ruby>あし');
+  }
+
+  if(G.phase==='feedback'){
+    G.fbT -= dt;
+    if(G.fbT <= 0) nextPose();
+    return;
+  }
+  G.elapsed += dt; G.grace -= dt;
+  const matched = Object.values(okMap).every(v=>v!==false);
+  if(G.grace <= 0){
+    if(matched) G.hold += dt;
+    else G.hold = Math.max(0, G.hold - dt*1.5);
+  }
+  const hm = $('holdMsg');
+  if(matched && G.grace<=0){ hm.className='holdmsg ok'; hm.textContent='そのまま!'; }
+  else if(!lm){ hm.className='holdmsg'; hm.innerHTML='カメラに うつってね'; }
+  else { hm.className='holdmsg'; hm.textContent='おなじポーズを してね'; }
+  $('holdBar').style.width = Math.min(100, G.hold/S.hold*100) + '%';
+
+  if(S.limit>0){
+    const left = Math.max(0, Math.ceil(S.limit - G.elapsed));
+    if(left !== G.lastSec){ G.lastSec = left; $('timeText').textContent = `のこり${left}秒`; }
+    $('timeBar').style.width = Math.max(0, (1 - G.elapsed/S.limit)*100) + '%';
+  }
+
+  if(G.hold >= S.hold) finishPose(true);
+  else if(S.limit>0 && G.elapsed >= S.limit) finishPose(false);
+}
+function finishPose(ok){
+  const p = G.list[G.idx];
+  G.results.push({pose:p, ok});
+  G.phase = 'feedback';
+  G.fbT = ok ? 1.8 : 1.6;
+  const fb = $('feedback');
+  fb.classList.toggle('next', !ok);
+  $('fbMark').style.display = ok ? 'block' : 'none';
+  $('fbText').innerHTML = ok ? 'できた!' : 'つぎの ポーズに いこう';
+  fb.classList.add('show');
+  $('holdBar').style.width = ok ? '100%' : '0%';
+  if(ok){ seOk(); speak('できたね'); } else { seNext(); }
+}
+function nextPose(){
+  G.idx++;
+  if(G.idx >= G.list.length) showResult();
+  else startPose();
+}
+function showResult(){
+  stopLoop(); releaseAwake();
+  $('feedback').classList.remove('show');
+  const n = G.results.filter(r=>r.ok).length;
+  $('scoreNum').textContent = n;
+  $('scoreAll').textContent = G.results.length;
+  const all = G.results.length>0 && n===G.results.length;
+  $('resultMsg').textContent = all ? 'ぜんぶ できたね!' : 'よく がんばったね!';
+  $('resultList').innerHTML = G.results.map(r=>
+    `<div class="ritem"><span>${r.pose.name}</span><span class="st ${r.ok?'ok':'ng'}">${r.ok?'できた':'また やってみよう'}</span></div>`).join('');
+  show('s-result');
+  speak(all ? 'ぜんぶ できたね' : 'よく がんばったね');
+}
+
+/* ===== ボタン ===== */
+$('startBtn').addEventListener('click', ()=>{ unlockAudio(); goCheck(); });
+$('retryBtn').addEventListener('click', ()=>{ unlockAudio(); goCheck(); });
+$('errBackBtn').addEventListener('click', ()=>{ stopLoop(); show('s-start'); });
+$('checkBackBtn').addEventListener('click', ()=>{ stopLoop(); show('s-start'); });
+$('goBtn').addEventListener('click', ()=>{ unlockAudio(); startGame(); });
+$('skipBtn').addEventListener('click', ()=>{ unlockAudio(); if(G.phase==='pose') finishPose(false); });
+$('quitBtn').addEventListener('click', ()=>{ unlockAudio(); showResult(); });
+$('againBtn').addEventListener('click', ()=>{ unlockAudio(); goCheck(); });
+$('homeBtn').addEventListener('click', ()=>{ show('s-start'); });
+document.addEventListener('gesturestart', e=>e.preventDefault());
+
+/* ===== つかいかた ===== */
+function openHelp(){ $('helpHide').checked = lsGet(HELP_KEY)==='1'; $('helpModal').classList.add('show'); }
+$('helpBtn').addEventListener('click', openHelp);
+$('helpClose').addEventListener('click', ()=>{ lsSet(HELP_KEY, $('helpHide').checked?'1':'0'); $('helpModal').classList.remove('show'); });
+if(lsGet(HELP_KEY)!=='1') openHelp();
+
+/* ===== 設定パネル ===== */
+function makeStepper(box, key, min, max, step, unit){
+  box.innerHTML = `<button type="button" aria-label="へらす">▽</button><input type="number" inputmode="numeric" min="${min}" max="${max}"><button type="button" aria-label="ふやす">△</button><span class="unit">${unit}</span>`;
+  const [dn, inp, up] = box.children;
+  const set = v=>{ v = Math.round(Number(v)); if(!isFinite(v)) v = S[key]; v = Math.min(max, Math.max(min, v)); S[key]=v; inp.value=v; saveS(); };
+  inp.value = S[key];
+  dn.addEventListener('click', ()=>set(S[key]-step));
+  up.addEventListener('click', ()=>set(S[key]+step));
+  inp.addEventListener('change', ()=>set(inp.value));
+  inp.addEventListener('blur', ()=>set(inp.value));
+}
+function makeSeg(box, key, items){
+  box.innerHTML = '';
+  for(const [val,label] of items){
+    const b = document.createElement('button'); b.type='button'; b.textContent = label;
+    b.classList.toggle('on', S[key]===val);
+    b.addEventListener('click', ()=>{ S[key]=val; saveS(); [...box.children].forEach((c,i)=>c.classList.toggle('on', items[i][0]===val)); });
+    box.appendChild(b);
+  }
+}
+function makeChips(){
+  const box = $('poseChips'); box.innerHTML='';
+  for(const p of POSES){
+    const b = document.createElement('button'); b.type='button'; b.innerHTML = p.name;
+    b.classList.toggle('on', S.poses.includes(p.id));
+    b.addEventListener('click', ()=>{
+      const on = S.poses.includes(p.id);
+      if(on && S.poses.length<=1) return;
+      S.poses = on ? S.poses.filter(x=>x!==p.id) : POSES.filter(q=>S.poses.includes(q.id)||q.id===p.id).map(q=>q.id);
+      b.classList.toggle('on', !on); saveS();
+    });
+    box.appendChild(b);
+  }
+}
+makeStepper($('st-count'),'count',1,30,1,'問');
+makeStepper($('st-hold'),'hold',1,10,1,'秒');
+makeStepper($('st-limit'),'limit',0,180,5,'秒');
+makeSeg($('sg-level'),'level',[['easy','やさしい'],['normal','ふつう'],['hard','きびしい']]);
+makeSeg($('sg-part'),'part',[['full','全身'],['arms','うでだけ']]);
+makeSeg($('sg-order'),'order',[['random','ランダム'],['fixed','一覧の順']]);
+makeSeg($('sg-video'),'video',[[true,'映す'],[false,'線だけ']]);
+makeSeg($('sg-sound'),'sound',[[true,'ON'],[false,'OFF']]);
+makeSeg($('sg-voice'),'voice',[[true,'ON'],[false,'OFF']]);
+makeChips();
+$('setBtn').addEventListener('click', ()=>$('setModal').classList.add('show'));
+$('setClose').addEventListener('click', ()=>{ document.activeElement && document.activeElement.blur(); $('setModal').classList.remove('show'); });
+
+/* ===== スタート画面の絵 ===== */
+function drawStart(){ drawFigure($('startFigure'), POSES[1].a, null); }
+drawStart();
+window.addEventListener('resize', drawStart);
+document.fonts && document.fonts.ready.then(drawStart);
+</script>
+</body>
+</html>
