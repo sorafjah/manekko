@@ -65,13 +65,16 @@ button:disabled{opacity:.4;cursor:default}
 #s-start .topbtns{position:absolute;top:calc(16px + env(safe-area-inset-top));right:calc(16px + env(safe-area-inset-right));display:flex;gap:12px}
 #s-start h1{font-size:clamp(36px,6vw,64px);color:var(--main);letter-spacing:.05em}
 #s-start .lead{font-size:clamp(18px,2.6vw,26px);color:var(--sub);line-height:1.8}
-#startFigure{width:min(200px,30vw);height:min(150px,18vh)}
+#startFigure{width:min(180px,28vw);height:min(130px,15vh)}
 .modes{display:flex;flex-direction:column;align-items:center;gap:10px;width:min(960px,100%)}
 .modes .mrow{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 .modes button{background:var(--card);border:2px solid var(--line);font-weight:700;font-size:clamp(16px,2vw,20px);padding:8px 6px;line-height:1.3;width:clamp(104px,12.5vw,150px);min-height:64px}
 .modes button small{display:block;font-size:.72em;font-weight:400;color:var(--sub)}
 .modes button.on{background:var(--main);border-color:var(--main);color:#fff}
 .modes button.on small{color:#fff}
+.modes button.act{width:clamp(150px,20vw,210px);min-height:68px;font-size:clamp(19px,2.4vw,24px)}
+.modes button.act.on{background:var(--ok);border-color:var(--ok)}
+#levelBtns.off{visibility:hidden}
 
 
 /* カメラ確認 */
@@ -99,6 +102,15 @@ button:disabled{opacity:.4;cursor:default}
 .part{font-size:clamp(14px,1.8vw,18px);font-weight:700;padding:6px 10px;border-radius:10px;background:var(--soft);color:var(--sub);border:2px solid var(--line);white-space:nowrap}
 .part.ok{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
 .part.off{display:none}
+.strip{display:none;gap:6px;padding:6px 8px 0;flex-wrap:wrap;justify-content:center}
+.strip.show{display:flex}
+.cell{width:clamp(44px,5.6vw,68px);height:clamp(58px,7.4vw,90px);border:2px solid var(--line);border-radius:10px;position:relative;display:flex;align-items:center;justify-content:center;background:var(--soft)}
+.cell canvas{width:100%;height:100%;display:block}
+.cell b{font-size:26px;color:var(--sub)}
+.cell .no{position:absolute;top:1px;left:5px;font-size:12px;font-weight:700;color:var(--sub)}
+.cell.now{border:3px solid var(--main);background:#fff}
+.cell.done{border-color:var(--ok);background:var(--ok-bg)}
+.fsub{font-size:clamp(20px,3vw,30px);color:var(--text);margin-top:8px}
 .playfoot{display:flex;align-items:center;gap:14px}
 .holdmsg{font-size:clamp(20px,2.8vw,28px);font-weight:700;min-width:9em;text-align:center}
 .holdmsg.ok{color:var(--ok)}
@@ -185,8 +197,13 @@ button:disabled{opacity:.4;cursor:default}
   </div>
   <canvas id="startFigure"></canvas>
   <h1>まねっこポーズ</h1>
-  <p class="lead">やる ポーズを えらんで、「スタート」を おしてね。</p>
+  <p class="lead">やることを えらんで、「スタート」を おしてね。</p>
   <div class="modes">
+    <div class="mrow" id="actBtns">
+      <button class="act" data-act="pose">まねっこ<small>1つずつ</small></button>
+      <button class="act" data-act="seq">れんぞく<small>じゅんばんに</small></button>
+      <button class="act" data-act="follow">ゆっくり<small>うごきに ついていく</small></button>
+    </div>
     <div class="mrow" id="levelBtns"><button data-mode="all">ランダム<small>ぜんぶから</small></button></div>
   </div>
   <button class="btn-main" id="startBtn">スタート</button>
@@ -225,6 +242,7 @@ button:disabled{opacity:.4;cursor:default}
   <div class="playmain">
     <div class="panel" id="targetPanel">
       <div class="ptitle">お<ruby>手本<rt>てほん</rt></ruby></div>
+      <div class="strip" id="seqStrip"></div>
       <canvas id="targetCanvas"></canvas>
     </div>
     <div class="panel" id="camPanel">
@@ -250,7 +268,7 @@ button:disabled{opacity:.4;cursor:default}
 <!-- 結果画面 -->
 <section id="s-result" class="screen">
   <h2>けっか</h2>
-  <div class="score">できたポーズ <b id="scoreNum">0</b> / <span id="scoreAll">0</span></div>
+  <div class="score">できた <b id="scoreNum">0</b> / <span id="scoreAll">0</span></div>
   <div class="rmsg" id="resultMsg"></div>
   <div class="rlist" id="resultList"></div>
   <div class="row">
@@ -287,8 +305,12 @@ button:disabled{opacity:.4;cursor:default}
   <div class="mbox">
     <h3>設定</h3>
     <div class="set-row"><div class="lbl">問題数</div><div class="stepper" id="st-count"></div></div>
-    <div class="set-row"><div class="lbl">「できた」までの時間<small>ポーズを続ける秒数</small></div><div class="stepper" id="st-hold"></div></div>
-    <div class="set-row"><div class="lbl">1問の制限時間<small>0にすると制限なし</small></div><div class="stepper" id="st-limit"></div></div>
+    <div class="set-row"><div class="lbl">「できた」までの時間<small>まねっこで ポーズを続ける秒数</small></div><div class="stepper" id="st-hold"></div></div>
+    <div class="set-row"><div class="lbl">1問の制限時間<small>れんぞくでは 1つのポーズごと。0にすると制限なし</small></div><div class="stepper" id="st-limit"></div></div>
+    <div class="set-row"><div class="lbl">れんぞく:ポーズの数</div><div class="stepper" id="st-seqLen"></div></div>
+    <div class="set-row"><div class="lbl">れんぞく:1つのポーズの時間<small>この秒数つづけると 次のポーズへ</small></div><div class="stepper" id="st-seqHold"></div></div>
+    <div class="set-row"><div class="lbl">れんぞく:お手本<small>「最初だけ」は 順番を覚えてから行う</small></div><div class="seg" id="sg-seqShow"></div></div>
+    <div class="set-row"><div class="lbl">ゆっくり:動く速さ</div><div class="seg" id="sg-speed"></div></div>
     <div class="set-row"><div class="lbl">判定のきびしさ</div><div class="seg" id="sg-level"></div></div>
     <div class="set-row"><div class="lbl">判定する部分<small>座ったまま行うときは「うでだけ」</small></div><div class="seg" id="sg-part"></div></div>
     <div class="set-row"><div class="lbl">カメラ映像<small>「線だけ」にすると姿は表示しない</small></div><div class="seg" id="sg-video"></div></div>
@@ -321,8 +343,8 @@ const LEVELS = [
   {lv:1, name:'まねしやすい', note:'左右おなじ・大きな動き'},
   {lv:2, name:'左右ちがう', note:'左右で別の動き'},
   {lv:3, name:'からだの まんなかを こえる', note:'正中線をこえる動き'},
-  {lv:4, name:'バランス', note:'片足を上げる'},
-  {lv:5, name:'きんトレ', note:'力を入れてキープ'},
+  {lv:4, name:'かんたん バランス', note:'手はらくに、足をすこし上げる'},
+  {lv:5, name:'バランス', note:'片足を上げて、手も動かす'},
 ];
 const ARM_DOWN_L = {la1:97,la2:95}, ARM_DOWN_R = {ra1:83,ra2:85};
 const ARM_UP_L = {la1:265,la2:268}, ARM_UP_R = {ra1:275,ra2:272};
@@ -336,6 +358,8 @@ const POSES = [
   {lv:1, id:'naname', name:'ななめの ポーズ', say:'ななめの ポーズ', a:{la1:225,la2:225,ra1:45,ra2:45,...STAND}},
   {lv:1, id:'maru', name:'あたまの <ruby>上<rt>うえ</rt></ruby>で まる', say:'あたまの うえで まる', a:{la1:228,la2:318,ra1:312,ra2:222,...STAND}},
   {lv:1, id:'koshi', name:'こしに <ruby>手<rt>て</rt></ruby>', say:'こしに て', a:{...ARM_HIP_L,...ARM_HIP_R,...STAND}},
+  {lv:1, id:'guts', name:'ガッツポーズ', say:'ガッツポーズ', a:{la1:180,la2:270,ra1:0,ra2:270,...STAND}},
+  {lv:1, id:'shiko', name:'すもうの ポーズ', say:'すもうの ポーズ', legs:true, a:{la1:105,la2:100,ra1:75,ra2:80,ll1:155,ll2:95,rl1:25,rl2:85}},
   {lv:1, id:'daiji', name:'<ruby>大<rt>だい</rt></ruby>の<ruby>字<rt>じ</rt></ruby>', say:'だいのじ', legs:true, a:{la1:215,la2:215,ra1:325,ra2:325,ll1:122,ll2:122,rl1:58,rl2:58}},
   // レベル2 左右ちがう
   {lv:2, id:'migite', name:'<ruby>右手<rt>みぎて</rt></ruby>を <ruby>上<rt>うえ</rt></ruby>に', say:'みぎてを うえに', a:{...ARM_DOWN_L,...ARM_UP_R,...STAND}},
@@ -344,29 +368,30 @@ const POSES = [
   {lv:2, id:'hue_myoko', name:'<ruby>左手<rt>ひだりて</rt></ruby>は <ruby>上<rt>うえ</rt></ruby>、<ruby>右手<rt>みぎて</rt></ruby>は <ruby>横<rt>よこ</rt></ruby>', say:'ひだりては うえ、みぎては よこ', a:{...ARM_UP_L,...ARM_SIDE_R,...STAND}},
   {lv:2, id:'myoko_hkoshi', name:'<ruby>右手<rt>みぎて</rt></ruby>は <ruby>横<rt>よこ</rt></ruby>、<ruby>左手<rt>ひだりて</rt></ruby>は こし', say:'みぎては よこ、ひだりては こし', a:{...ARM_HIP_L,...ARM_SIDE_R,...STAND}},
   {lv:2, id:'hyoko_mkoshi', name:'<ruby>左手<rt>ひだりて</rt></ruby>は <ruby>横<rt>よこ</rt></ruby>、<ruby>右手<rt>みぎて</rt></ruby>は こし', say:'ひだりては よこ、みぎては こし', a:{...ARM_SIDE_L,...ARM_HIP_R,...STAND}},
+  {lv:2, id:'lunge_m', name:'<ruby>右<rt>みぎ</rt></ruby>ひざを まげて <ruby>横<rt>よこ</rt></ruby>に', say:'みぎひざを まげて よこに', legs:true, a:{...ARM_HIP_L,...ARM_HIP_R,ll1:130,ll2:130,rl1:30,rl2:90}},
+  {lv:2, id:'lunge_h', name:'<ruby>左<rt>ひだり</rt></ruby>ひざを まげて <ruby>横<rt>よこ</rt></ruby>に', say:'ひだりひざを まげて よこに', legs:true, a:{...ARM_HIP_L,...ARM_HIP_R,ll1:150,ll2:90,rl1:50,rl2:50}},
   // レベル3 正中線をこえる
   {lv:3, id:'m_hkata', name:'<ruby>右手<rt>みぎて</rt></ruby>を <ruby>左<rt>ひだり</rt></ruby>の かたに', say:'みぎてを ひだりの かたに', a:{...ARM_DOWN_L,ra1:135,ra2:225,...STAND}},
   {lv:3, id:'h_mkata', name:'<ruby>左手<rt>ひだりて</rt></ruby>を <ruby>右<rt>みぎ</rt></ruby>の かたに', say:'ひだりてを みぎの かたに', a:{la1:45,la2:315,...ARM_DOWN_R,...STAND}},
   {lv:3, id:'cross', name:'むねの <ruby>前<rt>まえ</rt></ruby>で うでを クロス', say:'むねの まえで うでを クロス', a:{la1:60,la2:330,ra1:120,ra2:210,...STAND}},
   {lv:3, id:'m_hkoshi', name:'<ruby>右手<rt>みぎて</rt></ruby>を <ruby>左<rt>ひだり</rt></ruby>の こしに', say:'みぎてを ひだりの こしに', a:{...ARM_DOWN_L,ra1:115,ra2:130,...STAND}},
   {lv:3, id:'h_mkoshi', name:'<ruby>左手<rt>ひだりて</rt></ruby>を <ruby>右<rt>みぎ</rt></ruby>の こしに', say:'ひだりてを みぎの こしに', a:{la1:65,la2:50,...ARM_DOWN_R,...STAND}},
-  // レベル4 バランス
-  {lv:4, id:'migiashi', name:'<ruby>右<rt>みぎ</rt></ruby><ruby>足<rt>あし</rt></ruby>を <ruby>横<rt>よこ</rt></ruby>に', say:'みぎあしを よこに', legs:true, a:{...ARM_SIDE_L,...ARM_SIDE_R,ll1:92,ll2:92,rl1:45,rl2:45}},
-  {lv:4, id:'hidariashi', name:'<ruby>左<rt>ひだり</rt></ruby><ruby>足<rt>あし</rt></ruby>を <ruby>横<rt>よこ</rt></ruby>に', say:'ひだりあしを よこに', legs:true, a:{...ARM_SIDE_L,...ARM_SIDE_R,ll1:135,ll2:135,rl1:88,rl2:88}},
-  {lv:4, id:'kakashi_m', name:'<ruby>右<rt>みぎ</rt></ruby><ruby>足<rt>あし</rt></ruby>を <ruby>横<rt>よこ</rt></ruby>、<ruby>両手<rt>りょうて</rt></ruby>を <ruby>上<rt>うえ</rt></ruby>', say:'みぎあしを よこ、りょうてを うえ', legs:true, a:{la1:255,la2:262,ra1:285,ra2:278,ll1:92,ll2:92,rl1:45,rl2:45}},
-  {lv:4, id:'kakashi_h', name:'<ruby>左<rt>ひだり</rt></ruby><ruby>足<rt>あし</rt></ruby>を <ruby>横<rt>よこ</rt></ruby>、<ruby>両手<rt>りょうて</rt></ruby>を <ruby>上<rt>うえ</rt></ruby>', say:'ひだりあしを よこ、りょうてを うえ', legs:true, a:{la1:255,la2:262,ra1:285,ra2:278,ll1:135,ll2:135,rl1:88,rl2:88}},
-  // レベル5 きんトレ
-  {lv:5, id:'guts', name:'ガッツポーズ', say:'ガッツポーズ', a:{la1:180,la2:270,ra1:0,ra2:270,...STAND}},
-  {lv:5, id:'wpose', name:'Wの ポーズ', say:'ダブリューの ポーズ', a:{la1:150,la2:250,ra1:30,ra2:290,...STAND}},
-  {lv:5, id:'shiko', name:'すもうの ポーズ', say:'すもうの ポーズ', legs:true, a:{la1:105,la2:100,ra1:75,ra2:80,ll1:155,ll2:95,rl1:25,rl2:85}},
-  {lv:5, id:'lunge_m', name:'<ruby>右<rt>みぎ</rt></ruby>ひざを まげて <ruby>横<rt>よこ</rt></ruby>に', say:'みぎひざを まげて よこに', legs:true, a:{...ARM_HIP_L,...ARM_HIP_R,ll1:130,ll2:130,rl1:30,rl2:90}},
-  {lv:5, id:'lunge_h', name:'<ruby>左<rt>ひだり</rt></ruby>ひざを まげて <ruby>横<rt>よこ</rt></ruby>に', say:'ひだりひざを まげて よこに', legs:true, a:{...ARM_HIP_L,...ARM_HIP_R,ll1:150,ll2:90,rl1:50,rl2:50}},
+  // レベル4 かんたんバランス(手はらく・足をすこし上げる)
+  {lv:4, id:'sukoshi_m', name:'<ruby>右<rt>みぎ</rt></ruby><ruby>足<rt>あし</rt></ruby>を すこし <ruby>横<rt>よこ</rt></ruby>に', say:'みぎあしを すこし よこに', legs:true, a:{...ARM_DOWN_L,...ARM_DOWN_R,ll1:93,ll2:92,rl1:55,rl2:55}},
+  {lv:4, id:'sukoshi_h', name:'<ruby>左<rt>ひだり</rt></ruby><ruby>足<rt>あし</rt></ruby>を すこし <ruby>横<rt>よこ</rt></ruby>に', say:'ひだりあしを すこし よこに', legs:true, a:{...ARM_DOWN_L,...ARM_DOWN_R,ll1:125,ll2:125,rl1:87,rl2:88}},
+  {lv:4, id:'koshi_m', name:'こしに <ruby>手<rt>て</rt></ruby>で <ruby>右<rt>みぎ</rt></ruby><ruby>足<rt>あし</rt></ruby>を すこし <ruby>横<rt>よこ</rt></ruby>に', say:'こしに てで、みぎあしを すこし よこに', legs:true, a:{...ARM_HIP_L,...ARM_HIP_R,ll1:93,ll2:92,rl1:55,rl2:55}},
+  {lv:4, id:'koshi_h', name:'こしに <ruby>手<rt>て</rt></ruby>で <ruby>左<rt>ひだり</rt></ruby><ruby>足<rt>あし</rt></ruby>を すこし <ruby>横<rt>よこ</rt></ruby>に', say:'こしに てで、ひだりあしを すこし よこに', legs:true, a:{...ARM_HIP_L,...ARM_HIP_R,ll1:125,ll2:125,rl1:87,rl2:88}},
+  // レベル5 バランス
+  {lv:5, id:'migiashi', name:'<ruby>右<rt>みぎ</rt></ruby><ruby>足<rt>あし</rt></ruby>を <ruby>横<rt>よこ</rt></ruby>に', say:'みぎあしを よこに', legs:true, a:{...ARM_SIDE_L,...ARM_SIDE_R,ll1:92,ll2:92,rl1:45,rl2:45}},
+  {lv:5, id:'hidariashi', name:'<ruby>左<rt>ひだり</rt></ruby><ruby>足<rt>あし</rt></ruby>を <ruby>横<rt>よこ</rt></ruby>に', say:'ひだりあしを よこに', legs:true, a:{...ARM_SIDE_L,...ARM_SIDE_R,ll1:135,ll2:135,rl1:88,rl2:88}},
+  {lv:5, id:'kakashi_m', name:'<ruby>右<rt>みぎ</rt></ruby><ruby>足<rt>あし</rt></ruby>を <ruby>横<rt>よこ</rt></ruby>、<ruby>両手<rt>りょうて</rt></ruby>を <ruby>上<rt>うえ</rt></ruby>', say:'みぎあしを よこ、りょうてを うえ', legs:true, a:{la1:255,la2:262,ra1:285,ra2:278,ll1:92,ll2:92,rl1:45,rl2:45}},
+  {lv:5, id:'kakashi_h', name:'<ruby>左<rt>ひだり</rt></ruby><ruby>足<rt>あし</rt></ruby>を <ruby>横<rt>よこ</rt></ruby>、<ruby>両手<rt>りょうて</rt></ruby>を <ruby>上<rt>うえ</rt></ruby>', say:'ひだりあしを よこ、りょうてを うえ', legs:true, a:{la1:255,la2:262,ra1:285,ra2:278,ll1:135,ll2:135,rl1:88,rl2:88}},
 ];
 const TOL = {easy:45, normal:35, hard:25};
 
 /* ===== 設定 ===== */
-const DEFAULTS = {mode:'all', count:5, hold:5, limit:30, level:'normal', part:'full', order:'random', video:true, sound:true, voice:true, poses:POSES.map(p=>p.id)};
-const KEY = 'manekko_settings_v3', HELP_KEY = 'manekko_help_hide';
+const DEFAULTS = {act:'pose', mode:'all', seqLen:3, seqHold:1, seqShow:'show', speed:'slow', count:5, hold:5, limit:30, level:'normal', part:'full', order:'random', video:true, sound:true, voice:true, poses:POSES.map(p=>p.id)};
+const KEY = 'manekko_settings_v4', HELP_KEY = 'manekko_help_hide';
 function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 let S = {...DEFAULTS};
@@ -434,6 +459,7 @@ function tone(freq, start, dur, vol=0.15){
 }
 function sePon(){ if(S.sound) tone(660,0,0.25,0.12); }
 function seOk(){ if(S.sound){ tone(784,0,0.3); tone(988,0.12,0.3); tone(1318,0.24,0.5); } }
+function seStep(){ if(S.sound) tone(880,0,0.18,0.12); }
 function seNext(){ if(S.sound) tone(523,0,0.35,0.08); }
 
 /* ===== 図形計算 ===== */
@@ -472,7 +498,7 @@ function drawFigure(cv, a, okMap, opts={}){
   const sc = Math.min(w/(x1-x0+pad*2), h/(y1-y0+pad*2));
   const ox = w/2 - (x0+x1)/2*sc, oy = h/2 - (y0+y1)/2*sc;
   const T = p=>[ox+p[0]*sc, oy+p[1]*sc];
-  const lw = Math.max(6, sc*0.11);
+  const lw = Math.max(opts.thin?3:6, sc*0.11);
   const base = opts.color || '#2f7fd8';
   ctx.lineCap='round'; ctx.lineJoin='round';
   // 胴
@@ -555,7 +581,7 @@ function vis(i, th=0.5){ const p=lm[i]; return p.v>th && p.x>0.0 && p.x<1.0 && p
 
 function useLegs(){ return S.part==='full'; }
 /* 部位ごとの判定: true=あってる false=ちがう null=判定しない */
-function judge(target){
+function judge(target, extra=0){
   const tol = TOL[S.level]||30;
   const ok = {};
   for(const k in SEGS){
@@ -569,7 +595,9 @@ function judge(target){
     }
     const a=sp(i), b=sp(j);
     const ang = Math.atan2(b[1]-a[1], b[0]-a[0])*180/Math.PI;
-    ok[k] = angDiff(ang, target[k]) <= tol + (LOWER[k] ? 10 : 0);
+    let t = tol + extra + (LOWER[k] ? 10 : 0);
+    if(k[1]==='l') t = Math.min(t, LOWER[k] ? 25 : 22);  // 足は 立っているだけで合わないように
+    ok[k] = angDiff(ang, target[k]) <= t;
   }
   return ok;
 }
@@ -686,54 +714,166 @@ function showErr(e){
 }
 
 /* ===== 活動 ===== */
-const G = {list:[], idx:0, hold:0, miss:0, elapsed:0, grace:0, phase:'pose', fbT:0, results:[], lastSec:-1};
+const PM = Object.fromEntries(POSES.map(p=>[p.id,p]));
+/* ゆっくり:お手本が順に動く */
+const ROUTINES = [
+  {name:'<ruby>横<rt>よこ</rt></ruby> → ばんざい', keys:['kiotsuke','yoko','banzai','yoko','kiotsuke']},
+  {name:'<ruby>右手<rt>みぎて</rt></ruby> → <ruby>左手<rt>ひだりて</rt></ruby>', keys:['kiotsuke','migite','kiotsuke','hidarite','kiotsuke']},
+  {name:'ななめ → ばんざい', keys:['kiotsuke','naname','banzai','naname','kiotsuke']},
+  {name:'<ruby>横<rt>よこ</rt></ruby> → ガッツポーズ', keys:['kiotsuke','yoko','guts','yoko','kiotsuke']},
+];
+const SPEED = {slow:4, normal:3, fast:2};  // 1つの動きにかける秒数
+const STOP_T = 2.5;                         // とまる秒数
+const FOLLOW_OK = 70;                       // この%以上で「できた」
+
+const G = {items:[], idx:0, hold:0, miss:0, elapsed:0, grace:0, phase:'pose', fbT:0, results:[], lastSec:-1,
+  step:0, prevT:0, prevTotal:0, prevIdx:-1, tl:null, t:0, ok:0, tot:0, seg:-1};
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
-function makeList(){
-  let base = S.mode==='all' ? POSES : POSES.filter(p=>p.lv===S.mode);
+function posePool(){
+  const base = S.mode==='all' ? POSES : POSES.filter(p=>p.lv===S.mode);
   let pool = base.filter(p=>S.poses.includes(p.id));
   if(!pool.length) pool = base.slice();
   if(!useLegs()){ const np = pool.filter(p=>!p.legs); if(np.length) pool = np; }
-  const out = [];
-  while(out.length < S.count){
+  return pool;
+}
+function makeList(n){
+  const pool = posePool(), out = [];
+  while(out.length < n){
     const batch = shuffle(pool.slice());
     if(out.length && batch.length>1 && batch[0]===out[out.length-1]) batch.push(batch.shift());
     out.push(...batch);
   }
-  return out.slice(0, S.count);
+  return out.slice(0, n);
+}
+function makeItems(){
+  if(S.act==='seq'){
+    const items = [];
+    for(let i=0;i<S.count;i++) items.push({type:'seq', poses:makeList(S.seqLen)});
+    return items;
+  }
+  if(S.act==='follow'){
+    const out = [];
+    while(out.length < S.count) out.push(...shuffle(ROUTINES.slice()));
+    return out.slice(0, S.count).map(r=>({type:'follow', routine:r}));
+  }
+  return makeList(S.count).map(p=>({type:'pose', pose:p}));
 }
 let wakeLock = null;
 async function keepAwake(){ try{ if('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); }catch(e){} }
 function releaseAwake(){ try{ wakeLock && wakeLock.release(); }catch(e){} wakeLock = null; }
 
 function startGame(){
-  G.list = makeList(); G.idx = 0; G.results = [];
+  G.items = makeItems(); G.idx = 0; G.results = [];
   show('s-play');
   ['p-ll','p-rl'].forEach(id=>$(id).classList.toggle('off', !useLegs()));
-  $('timeRow').style.display = S.limit>0 ? 'flex' : 'none';
-  startPose();
+  $('timeRow').style.display = (S.act==='follow' || S.limit>0) ? 'flex' : 'none';
+  $('seqStrip').classList.toggle('show', S.act==='seq');
+  startItem();
   startLoop('play');
   keepAwake();
 }
-function startPose(){
-  const p = G.list[G.idx];
-  G.hold = 0; G.miss = 0; G.elapsed = 0; G.grace = 1.0; G.phase='pose'; G.lastSec=-1;
-  $('countText').textContent = `${G.idx+1} / ${G.list.length}`;
-  $('poseName').innerHTML = p.name;
+
+/* --- れんぞく:上の小さいお手本 --- */
+function buildStrip(poses){
+  const st = $('seqStrip'); st.innerHTML = '';
+  poses.forEach((p,i)=>{
+    const c = document.createElement('div'); c.className = 'cell';
+    c.innerHTML = `<span class="no">${i+1}</span><canvas></canvas><b>?</b>`;
+    st.appendChild(c);
+  });
+}
+function refreshStrip(it){
+  const hide = S.seqShow==='hide' && G.phase!=='preview';
+  [...$('seqStrip').children].forEach((c,i)=>{
+    const done = i < G.step;
+    const now = G.phase==='preview' ? i===G.prevIdx : i===G.step;
+    c.classList.toggle('done', done); c.classList.toggle('now', now);
+    const fig = !hide || done;
+    const cv = c.querySelector('canvas');
+    cv.style.display = fig ? 'block' : 'none';
+    c.querySelector('b').style.display = fig ? 'none' : 'block';
+    if(fig) drawFigure(cv, it.poses[i].a, null, {thin:true, color: done ? '#23a061' : '#2f7fd8'});
+  });
+}
+function setSeqName(it){
+  const n = `${G.step+1}つめ`;
+  $('poseName').innerHTML = S.seqShow==='hide' ? `${n}は なにかな?` : `${n} ${it.poses[G.step].name}`;
+}
+function drawQ(cv){
+  const dpr = window.devicePixelRatio||1, w = cv.clientWidth, h = cv.clientHeight;
+  if(!w || !h) return;
+  if(cv.width !== Math.round(w*dpr) || cv.height !== Math.round(h*dpr)){ cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr); }
+  const ctx = cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,w,h);
+  ctx.fillStyle = '#c3cfdd'; ctx.font = `700 ${Math.min(w,h)*0.5}px "BIZ UDPGothic",sans-serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('?', w/2, h/2);
+}
+
+/* --- ゆっくり:動きの予定表 --- */
+function lerpA(a,b,t){ const d = ((b-a)%360+540)%360-180; return a + d*t; }
+function buildTimeline(r){
+  const sp = SPEED[S.speed] || 4, tl = [];
+  tl.push({kind:'ready', from:r.keys[0], to:r.keys[0], dur:2.5});
+  for(let i=1;i<r.keys.length;i++){
+    tl.push({kind:'move', from:r.keys[i-1], to:r.keys[i], dur:sp});
+    tl.push({kind:'stop', from:r.keys[i], to:r.keys[i], dur:STOP_T});
+  }
+  let t = 0; tl.forEach(x=>{ x.t0 = t; t += x.dur; }); tl.total = t;
+  return tl;
+}
+function tlAt(tl, t){
+  let i = tl.findIndex(x=>t < x.t0 + x.dur); if(i<0) i = tl.length-1;
+  const x = tl[i], u = Math.min(1, Math.max(0, (t-x.t0)/x.dur)), e = u*u*(3-2*u);
+  const A = PM[x.from].a, B = PM[x.to].a, a = {};
+  for(const k in A) a[k] = lerpA(A[k], B[k], e);
+  return {i, x, a};
+}
+
+function startItem(){
+  const it = G.items[G.idx];
+  G.hold = 0; G.miss = 0; G.elapsed = 0; G.grace = 1.0; G.lastSec = -1; G.step = 0; G.prevIdx = -1;
+  $('countText').textContent = `${G.idx+1} / ${G.items.length}`;
   $('feedback').classList.remove('show');
+  $('holdBar').style.width = '0%';
   sePon();
-  speak(p.say);
+  if(it.type==='pose'){
+    G.phase = 'pose'; $('poseName').innerHTML = it.pose.name; speak(it.pose.say);
+  }else if(it.type==='seq'){
+    buildStrip(it.poses);
+    if(S.seqShow==='hide'){
+      G.phase = 'preview'; G.prevTotal = G.prevT = Math.max(4, it.poses.length*2);
+      $('poseName').innerHTML = 'じゅんばんを おぼえてね';
+      speak(it.poses.map(p=>p.say).join('、'));
+    }else{
+      G.phase = 'pose'; setSeqName(it); speak(it.poses[0].say);
+    }
+    refreshStrip(it);
+  }else{
+    G.phase = 'pose'; G.tl = buildTimeline(it.routine); G.t = 0; G.ok = 0; G.tot = 0; G.seg = -1;
+    $('poseName').innerHTML = it.routine.name;
+    speak('おなじポーズで まってね');
+  }
 }
 function setPart(id, ok, label){
   const el = $(id);
   el.classList.toggle('ok', ok);
   el.innerHTML = label + (ok ? ' OK' : ' まだ');
 }
+function setHold(text, ok){ const hm = $('holdMsg'); hm.className = 'holdmsg' + (ok ? ' ok' : ''); hm.innerHTML = text; }
+
 function updatePlay(dt){
-  const p = G.list[G.idx];
-  if(!p) return;
-  const okMap = judge(p.a);
+  const it = G.items[G.idx];
+  if(!it) return;
+  let target, extra = 0, cur = null;
+  if(it.type==='pose') target = it.pose.a;
+  else if(it.type==='seq') target = it.poses[Math.min(G.step, it.poses.length-1)].a;
+  else { cur = tlAt(G.tl, G.t); target = cur.a; if(cur.x.kind==='move') extra = 15; }
+  const okMap = judge(target, extra);
   drawCam($('playCanvas'), okMap);
-  drawFigure($('targetCanvas'), p.a, okMap);
+
+  // お手本の表示
+  if(it.type==='seq' && G.phase==='preview') drawFigure($('targetCanvas'), it.poses[Math.max(0,G.prevIdx)].a, null);
+  else if(it.type==='seq' && S.seqShow==='hide' && G.phase!=='feedback') drawQ($('targetCanvas'));
+  else drawFigure($('targetCanvas'), target, G.phase==='preview' ? null : okMap);
 
   const both = (a,b)=> okMap[a]!==false && okMap[b]!==false;
   setPart('p-ra', both('ra1','ra2'), '<ruby>右<rt>みぎ</rt></ruby>うで');
@@ -745,9 +885,25 @@ function updatePlay(dt){
 
   if(G.phase==='feedback'){
     G.fbT -= dt;
-    if(G.fbT <= 0) nextPose();
+    if(G.fbT <= 0) nextItem();
     return;
   }
+  if(G.phase==='preview'){
+    G.prevT -= dt;
+    const n = it.poses.length;
+    const pi = Math.min(n-1, Math.floor((1 - G.prevT/G.prevTotal) * n));
+    if(pi !== G.prevIdx){ G.prevIdx = pi; refreshStrip(it); }
+    setHold('じゅんばんを おぼえてね', false);
+    if(G.prevT <= 0){
+      G.phase = 'pose'; G.grace = 0.5;
+      setSeqName(it); refreshStrip(it); sePon(); speak('はじめ');
+    }
+    return;
+  }
+  if(it.type==='follow'){ updateFollow(dt, cur, okMap); return; }
+
+  // まねっこ・れんぞく
+  const need = it.type==='seq' ? S.seqHold : S.hold;
   G.elapsed += dt; G.grace -= dt;
   const matched = Object.values(okMap).every(v=>v!==false);
   if(matched) G.miss = 0; else G.miss += dt;
@@ -756,11 +912,10 @@ function updatePlay(dt){
     if(holding) G.hold += dt;
     else G.hold = Math.max(0, G.hold - dt*0.6);
   }
-  const hm = $('holdMsg');
-  if(holding && G.grace<=0 && lm){ hm.className='holdmsg ok'; hm.textContent='そのまま!'; }
-  else if(!lm){ hm.className='holdmsg'; hm.innerHTML='カメラに うつってね'; }
-  else { hm.className='holdmsg'; hm.textContent='おなじポーズを してね'; }
-  $('holdBar').style.width = Math.min(100, G.hold/S.hold*100) + '%';
+  if(!lm) setHold('カメラに うつってね', false);
+  else if(holding && G.grace<=0) setHold('そのまま!', true);
+  else setHold(it.type==='seq' && S.seqShow==='hide' ? 'おぼえた ポーズを してね' : 'おなじポーズを してね', false);
+  $('holdBar').style.width = Math.min(100, G.hold/need*100) + '%';
 
   if(S.limit>0){
     const left = Math.max(0, Math.ceil(S.limit - G.elapsed));
@@ -768,26 +923,69 @@ function updatePlay(dt){
     $('timeBar').style.width = Math.max(0, (1 - G.elapsed/S.limit)*100) + '%';
   }
 
-  if(G.hold >= S.hold) finishPose(true);
-  else if(S.limit>0 && G.elapsed >= S.limit) finishPose(false);
+  if(G.hold >= need){
+    if(it.type==='seq' && G.step < it.poses.length-1){
+      G.step++; G.hold = 0; G.miss = 0; G.elapsed = 0; G.grace = 0.3; G.lastSec = -1;
+      seStep(); setSeqName(it); refreshStrip(it);
+      if(S.seqShow!=='hide') speak(it.poses[G.step].say);
+    }else{
+      if(it.type==='seq'){ G.step = it.poses.length; refreshStrip(it); }
+      finishItem(true);
+    }
+  }else if(S.limit>0 && G.elapsed >= S.limit) finishItem(false);
 }
-function finishPose(ok){
-  const p = G.list[G.idx];
-  G.results.push({pose:p, ok});
+
+function updateFollow(dt, cur, okMap){
+  const tl = G.tl, kind = cur.x.kind;
+  if(cur.i !== G.seg){
+    G.seg = cur.i;
+    if(kind==='move' && cur.i===1) speak('ゆっくり うごくよ');
+    if(kind==='stop') speak('ストップ');
+  }
+  G.t += dt;
+  const matched = Object.values(okMap).every(v=>v!==false);
+  if(kind!=='ready'){ G.tot += dt; if(matched) G.ok += dt; }
+  if(!lm) setHold('カメラに うつってね', false);
+  else if(kind==='ready') setHold('おなじポーズで まってね', matched);
+  else if(kind==='stop') setHold('ストップ!', matched);
+  else setHold(matched ? 'いっしょ!' : 'ゆっくり ついてきてね', matched);
+  $('holdBar').style.width = (G.tot>0 ? G.ok/G.tot*100 : 0) + '%';
+  const left = Math.max(0, Math.ceil(tl.total - G.t));
+  if(left !== G.lastSec){ G.lastSec = left; $('timeText').textContent = `のこり${left}秒`; }
+  $('timeBar').style.width = Math.max(0, (1 - G.t/tl.total)*100) + '%';
+  if(G.t >= tl.total){
+    const pct = followPct();
+    finishItem(pct >= FOLLOW_OK, pct);
+  }
+}
+function followPct(){ return G.tot>0 ? Math.round(G.ok/G.tot*100) : 0; }
+
+function finishItem(ok, pct){
+  const it = G.items[G.idx];
+  if(it.type==='follow' && pct==null) pct = followPct();
+  G.results.push({it, ok, pct});
   G.phase = 'feedback';
-  G.fbT = ok ? 1.8 : 1.6;
+  G.fbT = it.type==='follow' ? 2.6 : (ok ? 1.8 : 1.6);
   const fb = $('feedback');
   fb.classList.toggle('next', !ok);
   $('fbMark').style.display = ok ? 'block' : 'none';
-  $('fbText').innerHTML = ok ? 'できた!' : 'つぎの ポーズに いこう';
+  let text;
+  if(it.type==='follow') text = (ok ? 'できた!' : 'おつかれさま') + `<div class="fsub">いっしょに うごけた ${pct}%</div>`;
+  else text = ok ? 'できた!' : (it.type==='seq' ? 'つぎに いこう' : 'つぎの ポーズに いこう');
+  $('fbText').innerHTML = text;
   fb.classList.add('show');
-  $('holdBar').style.width = ok ? '100%' : '0%';
+  if(it.type!=='follow') $('holdBar').style.width = ok ? '100%' : '0%';
   if(ok){ seOk(); speak('できたね'); } else { seNext(); }
 }
-function nextPose(){
+function nextItem(){
   G.idx++;
-  if(G.idx >= G.list.length) showResult();
-  else startPose();
+  if(G.idx >= G.items.length) showResult();
+  else startItem();
+}
+function itemName(it){
+  if(it.type==='pose') return it.pose.name;
+  if(it.type==='seq') return it.poses.map(p=>p.name).join(' → ');
+  return it.routine.name;
 }
 function showResult(){
   stopLoop(); releaseAwake();
@@ -797,8 +995,10 @@ function showResult(){
   $('scoreAll').textContent = G.results.length;
   const all = G.results.length>0 && n===G.results.length;
   $('resultMsg').textContent = all ? 'ぜんぶ できたね!' : 'よく がんばったね!';
-  $('resultList').innerHTML = G.results.map(r=>
-    `<div class="ritem"><span>${r.pose.name}</span><span class="st ${r.ok?'ok':'ng'}">${r.ok?'できた':'また やってみよう'}</span></div>`).join('');
+  $('resultList').innerHTML = G.results.map(r=>{
+    const st = r.it.type==='follow' ? `いっしょ ${r.pct}%` : (r.ok ? 'できた' : 'また やってみよう');
+    return `<div class="ritem"><span>${itemName(r.it)}</span><span class="st ${r.ok?'ok':'ng'}">${st}</span></div>`;
+  }).join('');
   show('s-result');
   speak(all ? 'ぜんぶ できたね' : 'よく がんばったね');
 }
@@ -809,7 +1009,7 @@ $('retryBtn').addEventListener('click', ()=>{ unlockAudio(); goCheck(); });
 $('errBackBtn').addEventListener('click', ()=>{ stopLoop(); show('s-start'); });
 $('checkBackBtn').addEventListener('click', ()=>{ stopLoop(); show('s-start'); });
 $('goBtn').addEventListener('click', ()=>{ unlockAudio(); startGame(); });
-$('skipBtn').addEventListener('click', ()=>{ unlockAudio(); if(G.phase==='pose') finishPose(false); });
+$('skipBtn').addEventListener('click', ()=>{ unlockAudio(); if(G.phase==='pose'||G.phase==='preview') finishItem(false); });
 $('quitBtn').addEventListener('click', ()=>{ unlockAudio(); showResult(); });
 $('againBtn').addEventListener('click', ()=>{ unlockAudio(); goCheck(); });
 $('homeBtn').addEventListener('click', ()=>{ show('s-start'); });
@@ -878,6 +1078,10 @@ function makeChips(){
 makeStepper($('st-count'),'count',1,30,1,'問');
 makeStepper($('st-hold'),'hold',1,10,1,'秒');
 makeStepper($('st-limit'),'limit',0,180,5,'秒');
+makeStepper($('st-seqLen'),'seqLen',2,5,1,'こ');
+makeStepper($('st-seqHold'),'seqHold',1,5,1,'秒');
+makeSeg($('sg-seqShow'),'seqShow',[['show','ずっと見せる'],['hide','最初だけ見せる']]);
+makeSeg($('sg-speed'),'speed',[['slow','おそい'],['normal','ふつう'],['fast','はやい']]);
 makeSeg($('sg-level'),'level',[['easy','やさしい'],['normal','ふつう'],['hard','きびしい']]);
 makeSeg($('sg-part'),'part',[['full','全身'],['arms','うでだけ']]);
 makeSeg($('sg-video'),'video',[[true,'映す'],[false,'線だけ']]);
@@ -888,24 +1092,31 @@ $('setBtn').addEventListener('click', ()=>$('setModal').classList.add('show'));
 $('setClose').addEventListener('click', ()=>{ document.activeElement && document.activeElement.blur(); $('setModal').classList.remove('show'); });
 
 /* ===== スタート画面のえらぶボタン ===== */
-const LV_RUBY = {1:'まねしやすい',2:'<ruby>左右<rt>さゆう</rt></ruby>ちがう',3:'まんなか こえる',4:'バランス',5:'きんトレ'};
+const LV_RUBY = {1:'まねしやすい',2:'<ruby>左右<rt>さゆう</rt></ruby>ちがう',3:'まんなか こえる',4:'かんたん バランス',5:'バランス'};
 for(const L of LEVELS){
   const b = document.createElement('button'); b.type='button'; b.dataset.mode = L.lv;
   b.innerHTML = `レベル${L.lv}<small>${LV_RUBY[L.lv]}</small>`;
   $('levelBtns').appendChild(b);
 }
 function refreshModes(){
-  document.querySelectorAll('.modes button').forEach(b=>{
+  document.querySelectorAll('#levelBtns button').forEach(b=>{
     const m = b.dataset.mode==='all' ? 'all' : Number(b.dataset.mode);
     b.classList.toggle('on', m===S.mode);
   });
 }
-document.querySelectorAll('.modes button').forEach(b=>b.addEventListener('click', ()=>{
+document.querySelectorAll('#levelBtns button').forEach(b=>b.addEventListener('click', ()=>{
   S.mode = b.dataset.mode==='all' ? 'all' : Number(b.dataset.mode);
   saveS(); refreshModes();
 }));
 if(S.mode!=='all' && !LEVELS.some(L=>L.lv===S.mode)) S.mode='all';
 refreshModes();
+function refreshActs(){
+  document.querySelectorAll('#actBtns button').forEach(b=>b.classList.toggle('on', b.dataset.act===S.act));
+  $('levelBtns').classList.toggle('off', S.act==='follow');
+}
+document.querySelectorAll('#actBtns button').forEach(b=>b.addEventListener('click', ()=>{ S.act=b.dataset.act; saveS(); refreshActs(); }));
+if(!['pose','seq','follow'].includes(S.act)) S.act='pose';
+refreshActs();
 
 /* ===== スタート画面の絵 ===== */
 function drawStart(){ drawFigure($('startFigure'), POSES[1].a, null); }
