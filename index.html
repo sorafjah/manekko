@@ -66,13 +66,13 @@ button:disabled{opacity:.4;cursor:default}
 #s-start h1{font-size:clamp(36px,6vw,64px);color:var(--main);letter-spacing:.05em}
 #s-start .lead{font-size:clamp(18px,2.6vw,26px);color:var(--sub);line-height:1.8}
 #startFigure{width:min(200px,30vw);height:min(150px,18vh)}
-.modes{display:flex;flex-direction:column;align-items:center;gap:10px;width:min(820px,100%)}
+.modes{display:flex;flex-direction:column;align-items:center;gap:10px;width:min(960px,100%)}
 .modes .mrow{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
-.modes button{background:var(--card);border:2px solid var(--line);font-weight:700;font-size:clamp(16px,2vw,20px);padding:8px 16px;line-height:1.3}
+.modes button{background:var(--card);border:2px solid var(--line);font-weight:700;font-size:clamp(16px,2vw,20px);padding:8px 6px;line-height:1.3;width:clamp(104px,12.5vw,150px);min-height:64px}
 .modes button small{display:block;font-size:.72em;font-weight:400;color:var(--sub)}
 .modes button.on{background:var(--main);border-color:var(--main);color:#fff}
 .modes button.on small{color:#fff}
-.modes .all{font-size:clamp(18px,2.4vw,24px);padding:10px 28px}
+
 
 /* カメラ確認 */
 #s-check{padding:16px;gap:12px;align-items:center}
@@ -187,8 +187,7 @@ button:disabled{opacity:.4;cursor:default}
   <h1>まねっこポーズ</h1>
   <p class="lead">やる ポーズを えらんで、「スタート」を おしてね。</p>
   <div class="modes">
-    <div class="mrow"><button class="all" data-mode="all">ぜんぶから ランダム</button></div>
-    <div class="mrow" id="levelBtns"></div>
+    <div class="mrow" id="levelBtns"><button data-mode="all">ランダム<small>ぜんぶから</small></button></div>
   </div>
   <button class="btn-main" id="startBtn">スタート</button>
   <p class="privacy">カメラの<ruby>映像<rt>えいぞう</rt></ruby>は このiPadの<ruby>中<rt>なか</rt></ruby>だけで<ruby>使<rt>つか</rt></ruby>い、<ruby>保存<rt>ほぞん</rt></ruby>したり <ruby>送<rt>おく</rt></ruby>ったり しません。</p>
@@ -889,7 +888,7 @@ $('setBtn').addEventListener('click', ()=>$('setModal').classList.add('show'));
 $('setClose').addEventListener('click', ()=>{ document.activeElement && document.activeElement.blur(); $('setModal').classList.remove('show'); });
 
 /* ===== スタート画面のえらぶボタン ===== */
-const LV_RUBY = {1:'まねしやすい',2:'<ruby>左右<rt>さゆう</rt></ruby>ちがう',3:'まんなかを こえる',4:'バランス',5:'きんトレ'};
+const LV_RUBY = {1:'まねしやすい',2:'<ruby>左右<rt>さゆう</rt></ruby>ちがう',3:'まんなか こえる',4:'バランス',5:'きんトレ'};
 for(const L of LEVELS){
   const b = document.createElement('button'); b.type='button'; b.dataset.mode = L.lv;
   b.innerHTML = `レベル${L.lv}<small>${LV_RUBY[L.lv]}</small>`;
