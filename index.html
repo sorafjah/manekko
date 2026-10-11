@@ -147,6 +147,12 @@ button:disabled{opacity:.4;cursor:default}
 .seg button{background:var(--soft);border:2px solid var(--line);font-size:17px;font-weight:700;padding:8px 14px}
 .seg button.on{background:var(--main);border-color:var(--main);color:#fff}
 .chips{display:flex;gap:8px;flex-wrap:wrap}
+.lvhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0 8px}
+.lvhead b{font-size:17px}
+.lvhead small{font-size:14px;color:var(--sub)}
+.lvhead button{margin-left:auto;background:var(--card);border:2px solid var(--line);font-size:15px;font-weight:700;padding:6px 14px}
+.privacy{position:absolute;left:0;right:0;bottom:calc(14px + env(safe-area-inset-bottom));text-align:center;font-size:clamp(12px,1.5vw,14px);color:var(--sub);padding:0 16px;line-height:1.9}
+.privacy-s{font-size:clamp(12px,1.5vw,14px);color:var(--sub);text-align:center;line-height:1.9}
 .chips button{background:var(--soft);border:2px solid var(--line);font-size:16px;font-weight:700;padding:8px 12px}
 .chips button.on{background:#dceafa;border-color:var(--main);color:var(--main-dark)}
 .mfoot{display:flex;justify-content:flex-end}
@@ -174,6 +180,7 @@ button:disabled{opacity:.4;cursor:default}
   <h1>まねっこポーズ</h1>
   <p class="lead">お<ruby>手本<rt>てほん</rt></ruby>と おなじポーズを してみよう。<br>「スタート」を おすと はじまるよ。</p>
   <button class="btn-main" id="startBtn">スタート</button>
+  <p class="privacy">カメラの<ruby>映像<rt>えいぞう</rt></ruby>は このiPadの<ruby>中<rt>なか</rt></ruby>だけで<ruby>使<rt>つか</rt></ruby>い、<ruby>保存<rt>ほぞん</rt></ruby>したり <ruby>送<rt>おく</rt></ruby>ったり しません。</p>
 </section>
 
 <!-- カメラ確認画面 -->
@@ -192,6 +199,7 @@ button:disabled{opacity:.4;cursor:default}
     <button class="btn-sub" id="checkBackBtn">もどる</button>
     <button class="btn-main" id="goBtn" disabled>はじめる</button>
   </div>
+  <p class="privacy-s"><ruby>映像<rt>えいぞう</rt></ruby>は <ruby>保存<rt>ほぞん</rt></ruby>したり <ruby>送<rt>おく</rt></ruby>ったり しません。</p>
 </section>
 
 <!-- 活動画面 -->
@@ -277,7 +285,7 @@ button:disabled{opacity:.4;cursor:default}
     <div class="set-row"><div class="lbl">カメラ映像<small>「線だけ」にすると姿は表示しない</small></div><div class="seg" id="sg-video"></div></div>
     <div class="set-row"><div class="lbl">効果音</div><div class="seg" id="sg-sound"></div></div>
     <div class="set-row"><div class="lbl">読み上げ</div><div class="seg" id="sg-voice"></div></div>
-    <div class="set-row" style="flex-direction:column;align-items:stretch"><div class="lbl">使うポーズ<small>押して選ぶ(1つ以上)</small></div><div class="chips" id="poseChips"></div></div>
+    <div class="set-row" style="flex-direction:column;align-items:stretch"><div class="lbl">使うポーズ<small>押して選ぶ(1つ以上)。「まとめて」でレベルごとに選べる</small></div><div id="poseChips"></div></div>
     <div class="mfoot"><button class="btn-main" id="setClose" style="padding:10px 36px;font-size:22px">とじる</button></div>
   </div>
 </div>
@@ -300,25 +308,56 @@ const SEGS = {
 };
 const LOWER = {la2:1, ra2:1, ll2:1, rl2:1};
 const STAND = {ll1:95, ll2:93, rl1:85, rl2:87};
+const LEVELS = [
+  {lv:1, name:'まねしやすい', note:'左右おなじ・大きな動き'},
+  {lv:2, name:'左右ちがう', note:'左右で別の動き'},
+  {lv:3, name:'からだの まんなかを こえる', note:'正中線をこえる動き'},
+  {lv:4, name:'バランス', note:'片足を上げる'},
+  {lv:5, name:'きんトレ', note:'力を入れてキープ'},
+];
+const ARM_DOWN_L = {la1:97,la2:95}, ARM_DOWN_R = {ra1:83,ra2:85};
+const ARM_UP_L = {la1:265,la2:268}, ARM_UP_R = {ra1:275,ra2:272};
+const ARM_SIDE_L = {la1:180,la2:180}, ARM_SIDE_R = {ra1:0,ra2:0};
+const ARM_HIP_L = {la1:120,la2:55}, ARM_HIP_R = {ra1:60,ra2:125};
 const POSES = [
-  {id:'kiotsuke', name:'<ruby>気<rt>き</rt></ruby>をつけ', say:'きをつけ', a:{la1:97,la2:95,ra1:83,ra2:85,...STAND}},
-  {id:'banzai', name:'ばんざい', say:'ばんざい', a:{la1:255,la2:262,ra1:285,ra2:278,...STAND}},
-  {id:'yoko', name:'<ruby>両手<rt>りょうて</rt></ruby>を <ruby>横<rt>よこ</rt></ruby>に', say:'りょうてを よこに', a:{la1:180,la2:180,ra1:0,ra2:0,...STAND}},
-  {id:'migite', name:'<ruby>右手<rt>みぎて</rt></ruby>を <ruby>上<rt>うえ</rt></ruby>に', say:'みぎてを うえに', a:{la1:97,la2:95,ra1:275,ra2:272,...STAND}},
-  {id:'hidarite', name:'<ruby>左手<rt>ひだりて</rt></ruby>を <ruby>上<rt>うえ</rt></ruby>に', say:'ひだりてを うえに', a:{la1:265,la2:268,ra1:83,ra2:85,...STAND}},
-  {id:'maru', name:'あたまの <ruby>上<rt>うえ</rt></ruby>で まる', say:'あたまの うえで まる', a:{la1:228,la2:318,ra1:312,ra2:222,...STAND}},
-  {id:'guts', name:'ガッツポーズ', say:'ガッツポーズ', a:{la1:180,la2:270,ra1:0,ra2:270,...STAND}},
-  {id:'koshi', name:'こしに <ruby>手<rt>て</rt></ruby>', say:'こしに て', a:{la1:120,la2:55,ra1:60,ra2:125,...STAND}},
-  {id:'naname', name:'ななめの ポーズ', say:'ななめの ポーズ', a:{la1:225,la2:225,ra1:45,ra2:45,...STAND}},
-  {id:'daiji', name:'<ruby>大<rt>だい</rt></ruby>の<ruby>字<rt>じ</rt></ruby>', say:'だいのじ', a:{la1:215,la2:215,ra1:325,ra2:325,ll1:122,ll2:122,rl1:58,rl2:58}},
-  {id:'migiashi', name:'<ruby>右<rt>みぎ</rt></ruby><ruby>足<rt>あし</rt></ruby>を <ruby>横<rt>よこ</rt></ruby>に', say:'みぎあしを よこに', legs:true, a:{la1:180,la2:180,ra1:0,ra2:0,ll1:92,ll2:92,rl1:45,rl2:45}},
-  {id:'hidariashi', name:'<ruby>左<rt>ひだり</rt></ruby><ruby>足<rt>あし</rt></ruby>を <ruby>横<rt>よこ</rt></ruby>に', say:'ひだりあしを よこに', legs:true, a:{la1:180,la2:180,ra1:0,ra2:0,ll1:135,ll2:135,rl1:88,rl2:88}},
+  // レベル1 まねしやすい
+  {lv:1, id:'kiotsuke', name:'<ruby>気<rt>き</rt></ruby>をつけ', say:'きをつけ', a:{...ARM_DOWN_L,...ARM_DOWN_R,...STAND}},
+  {lv:1, id:'banzai', name:'ばんざい', say:'ばんざい', a:{la1:255,la2:262,ra1:285,ra2:278,...STAND}},
+  {lv:1, id:'yoko', name:'<ruby>両手<rt>りょうて</rt></ruby>を <ruby>横<rt>よこ</rt></ruby>に', say:'りょうてを よこに', a:{...ARM_SIDE_L,...ARM_SIDE_R,...STAND}},
+  {lv:1, id:'naname', name:'ななめの ポーズ', say:'ななめの ポーズ', a:{la1:225,la2:225,ra1:45,ra2:45,...STAND}},
+  {lv:1, id:'maru', name:'あたまの <ruby>上<rt>うえ</rt></ruby>で まる', say:'あたまの うえで まる', a:{la1:228,la2:318,ra1:312,ra2:222,...STAND}},
+  {lv:1, id:'koshi', name:'こしに <ruby>手<rt>て</rt></ruby>', say:'こしに て', a:{...ARM_HIP_L,...ARM_HIP_R,...STAND}},
+  {lv:1, id:'daiji', name:'<ruby>大<rt>だい</rt></ruby>の<ruby>字<rt>じ</rt></ruby>', say:'だいのじ', legs:true, a:{la1:215,la2:215,ra1:325,ra2:325,ll1:122,ll2:122,rl1:58,rl2:58}},
+  // レベル2 左右ちがう
+  {lv:2, id:'migite', name:'<ruby>右手<rt>みぎて</rt></ruby>を <ruby>上<rt>うえ</rt></ruby>に', say:'みぎてを うえに', a:{...ARM_DOWN_L,...ARM_UP_R,...STAND}},
+  {lv:2, id:'hidarite', name:'<ruby>左手<rt>ひだりて</rt></ruby>を <ruby>上<rt>うえ</rt></ruby>に', say:'ひだりてを うえに', a:{...ARM_UP_L,...ARM_DOWN_R,...STAND}},
+  {lv:2, id:'mue_hyoko', name:'<ruby>右手<rt>みぎて</rt></ruby>は <ruby>上<rt>うえ</rt></ruby>、<ruby>左手<rt>ひだりて</rt></ruby>は <ruby>横<rt>よこ</rt></ruby>', say:'みぎては うえ、ひだりては よこ', a:{...ARM_SIDE_L,...ARM_UP_R,...STAND}},
+  {lv:2, id:'hue_myoko', name:'<ruby>左手<rt>ひだりて</rt></ruby>は <ruby>上<rt>うえ</rt></ruby>、<ruby>右手<rt>みぎて</rt></ruby>は <ruby>横<rt>よこ</rt></ruby>', say:'ひだりては うえ、みぎては よこ', a:{...ARM_UP_L,...ARM_SIDE_R,...STAND}},
+  {lv:2, id:'myoko_hkoshi', name:'<ruby>右手<rt>みぎて</rt></ruby>は <ruby>横<rt>よこ</rt></ruby>、<ruby>左手<rt>ひだりて</rt></ruby>は こし', say:'みぎては よこ、ひだりては こし', a:{...ARM_HIP_L,...ARM_SIDE_R,...STAND}},
+  {lv:2, id:'hyoko_mkoshi', name:'<ruby>左手<rt>ひだりて</rt></ruby>は <ruby>横<rt>よこ</rt></ruby>、<ruby>右手<rt>みぎて</rt></ruby>は こし', say:'ひだりては よこ、みぎては こし', a:{...ARM_SIDE_L,...ARM_HIP_R,...STAND}},
+  // レベル3 正中線をこえる
+  {lv:3, id:'m_hkata', name:'<ruby>右手<rt>みぎて</rt></ruby>を <ruby>左<rt>ひだり</rt></ruby>の かたに', say:'みぎてを ひだりの かたに', a:{...ARM_DOWN_L,ra1:135,ra2:225,...STAND}},
+  {lv:3, id:'h_mkata', name:'<ruby>左手<rt>ひだりて</rt></ruby>を <ruby>右<rt>みぎ</rt></ruby>の かたに', say:'ひだりてを みぎの かたに', a:{la1:45,la2:315,...ARM_DOWN_R,...STAND}},
+  {lv:3, id:'cross', name:'むねの <ruby>前<rt>まえ</rt></ruby>で うでを クロス', say:'むねの まえで うでを クロス', a:{la1:60,la2:330,ra1:120,ra2:210,...STAND}},
+  {lv:3, id:'m_hkoshi', name:'<ruby>右手<rt>みぎて</rt></ruby>を <ruby>左<rt>ひだり</rt></ruby>の こしに', say:'みぎてを ひだりの こしに', a:{...ARM_DOWN_L,ra1:115,ra2:130,...STAND}},
+  {lv:3, id:'h_mkoshi', name:'<ruby>左手<rt>ひだりて</rt></ruby>を <ruby>右<rt>みぎ</rt></ruby>の こしに', say:'ひだりてを みぎの こしに', a:{la1:65,la2:50,...ARM_DOWN_R,...STAND}},
+  // レベル4 バランス
+  {lv:4, id:'migiashi', name:'<ruby>右<rt>みぎ</rt></ruby><ruby>足<rt>あし</rt></ruby>を <ruby>横<rt>よこ</rt></ruby>に', say:'みぎあしを よこに', legs:true, a:{...ARM_SIDE_L,...ARM_SIDE_R,ll1:92,ll2:92,rl1:45,rl2:45}},
+  {lv:4, id:'hidariashi', name:'<ruby>左<rt>ひだり</rt></ruby><ruby>足<rt>あし</rt></ruby>を <ruby>横<rt>よこ</rt></ruby>に', say:'ひだりあしを よこに', legs:true, a:{...ARM_SIDE_L,...ARM_SIDE_R,ll1:135,ll2:135,rl1:88,rl2:88}},
+  {lv:4, id:'kakashi_m', name:'<ruby>右<rt>みぎ</rt></ruby><ruby>足<rt>あし</rt></ruby>を <ruby>横<rt>よこ</rt></ruby>、<ruby>両手<rt>りょうて</rt></ruby>を <ruby>上<rt>うえ</rt></ruby>', say:'みぎあしを よこ、りょうてを うえ', legs:true, a:{la1:255,la2:262,ra1:285,ra2:278,ll1:92,ll2:92,rl1:45,rl2:45}},
+  {lv:4, id:'kakashi_h', name:'<ruby>左<rt>ひだり</rt></ruby><ruby>足<rt>あし</rt></ruby>を <ruby>横<rt>よこ</rt></ruby>、<ruby>両手<rt>りょうて</rt></ruby>を <ruby>上<rt>うえ</rt></ruby>', say:'ひだりあしを よこ、りょうてを うえ', legs:true, a:{la1:255,la2:262,ra1:285,ra2:278,ll1:135,ll2:135,rl1:88,rl2:88}},
+  // レベル5 きんトレ
+  {lv:5, id:'guts', name:'ガッツポーズ', say:'ガッツポーズ', a:{la1:180,la2:270,ra1:0,ra2:270,...STAND}},
+  {lv:5, id:'wpose', name:'Wの ポーズ', say:'ダブリューの ポーズ', a:{la1:150,la2:250,ra1:30,ra2:290,...STAND}},
+  {lv:5, id:'shiko', name:'すもうの ポーズ', say:'すもうの ポーズ', legs:true, a:{la1:105,la2:100,ra1:75,ra2:80,ll1:155,ll2:95,rl1:25,rl2:85}},
+  {lv:5, id:'lunge_m', name:'<ruby>右<rt>みぎ</rt></ruby>ひざを まげて <ruby>横<rt>よこ</rt></ruby>に', say:'みぎひざを まげて よこに', legs:true, a:{...ARM_HIP_L,...ARM_HIP_R,ll1:130,ll2:130,rl1:30,rl2:90}},
+  {lv:5, id:'lunge_h', name:'<ruby>左<rt>ひだり</rt></ruby>ひざを まげて <ruby>横<rt>よこ</rt></ruby>に', say:'ひだりひざを まげて よこに', legs:true, a:{...ARM_HIP_L,...ARM_HIP_R,ll1:150,ll2:90,rl1:50,rl2:50}},
 ];
 const TOL = {easy:45, normal:35, hard:25};
 
 /* ===== 設定 ===== */
-const DEFAULTS = {count:5, hold:2, limit:30, level:'normal', part:'full', order:'random', video:true, sound:true, voice:true, poses:POSES.map(p=>p.id)};
-const KEY = 'manekko_settings_v1', HELP_KEY = 'manekko_help_hide';
+const DEFAULTS = {count:5, hold:2, limit:30, level:'normal', part:'full', order:'random', video:true, sound:true, voice:true, poses:POSES.filter(p=>p.lv===1).map(p=>p.id)};
+const KEY = 'manekko_settings_v2', HELP_KEY = 'manekko_help_hide';
 function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 let S = {...DEFAULTS};
@@ -793,24 +832,44 @@ function makeSeg(box, key, items){
 }
 function makeChips(){
   const box = $('poseChips'); box.innerHTML='';
-  for(const p of POSES){
-    const b = document.createElement('button'); b.type='button'; b.innerHTML = p.name;
-    b.classList.toggle('on', S.poses.includes(p.id));
-    b.addEventListener('click', ()=>{
-      const on = S.poses.includes(p.id);
-      if(on && S.poses.length<=1) return;
-      S.poses = on ? S.poses.filter(x=>x!==p.id) : POSES.filter(q=>S.poses.includes(q.id)||q.id===p.id).map(q=>q.id);
-      b.classList.toggle('on', !on); saveS();
+  const btns = {};
+  const order = ids=>POSES.filter(q=>ids.includes(q.id)).map(q=>q.id);
+  const refresh = ()=>{ for(const id in btns) btns[id].classList.toggle('on', S.poses.includes(id)); };
+  for(const L of LEVELS){
+    const list = POSES.filter(p=>p.lv===L.lv);
+    const head = document.createElement('div'); head.className='lvhead';
+    head.innerHTML = `<b>レベル${L.lv} ${L.name}</b><small>${L.note}</small>`;
+    const all = document.createElement('button'); all.type='button'; all.textContent='まとめて';
+    all.addEventListener('click', ()=>{
+      const ids = list.map(p=>p.id);
+      const allOn = ids.every(id=>S.poses.includes(id));
+      if(allOn){ const rest = S.poses.filter(id=>!ids.includes(id)); if(!rest.length) return; S.poses = rest; }
+      else S.poses = order([...S.poses, ...ids]);
+      refresh(); saveS();
     });
-    box.appendChild(b);
+    head.appendChild(all); box.appendChild(head);
+    const wrap = document.createElement('div'); wrap.className='chips';
+    for(const p of list){
+      const btn = document.createElement('button'); btn.type='button'; btn.innerHTML = p.name;
+      btns[p.id] = btn;
+      btn.addEventListener('click', ()=>{
+        const on = S.poses.includes(p.id);
+        if(on && S.poses.length<=1) return;
+        S.poses = on ? S.poses.filter(x=>x!==p.id) : order([...S.poses, p.id]);
+        refresh(); saveS();
+      });
+      wrap.appendChild(btn);
+    }
+    box.appendChild(wrap);
   }
+  refresh();
 }
 makeStepper($('st-count'),'count',1,30,1,'問');
 makeStepper($('st-hold'),'hold',1,10,1,'秒');
 makeStepper($('st-limit'),'limit',0,180,5,'秒');
 makeSeg($('sg-level'),'level',[['easy','やさしい'],['normal','ふつう'],['hard','きびしい']]);
 makeSeg($('sg-part'),'part',[['full','全身'],['arms','うでだけ']]);
-makeSeg($('sg-order'),'order',[['random','ランダム'],['fixed','一覧の順']]);
+makeSeg($('sg-order'),'order',[['random','ランダム'],['fixed','レベル順']]);
 makeSeg($('sg-video'),'video',[[true,'映す'],[false,'線だけ']]);
 makeSeg($('sg-sound'),'sound',[[true,'ON'],[false,'OFF']]);
 makeSeg($('sg-voice'),'voice',[[true,'ON'],[false,'OFF']]);
