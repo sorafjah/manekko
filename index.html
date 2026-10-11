@@ -418,6 +418,7 @@ function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; 
 function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 let S = {...DEFAULTS};
 try{ const s = JSON.parse(lsGet(KEY)||'null'); if(s) S = {...DEFAULTS, ...s}; }catch(e){}
+S.act = 'pose';  // 開くたびに「まねっこ」から始める(やることは覚えない)
 S.poses = (S.poses||[]).filter(id=>POSES.some(p=>p.id===id));
 if(!S.poses.length) S.poses = DEFAULTS.poses.slice();
 function saveS(){ lsSet(KEY, JSON.stringify(S)); }
