@@ -213,10 +213,10 @@ button:disabled{opacity:.4;cursor:default}
       <div class="ptitle">じぶん</div>
       <div class="camwrap"><canvas id="playCanvas"></canvas></div>
       <div class="parts">
-        <div class="part" id="p-ra"><ruby>右<rt>みぎ</rt></ruby>うで まだ</div>
         <div class="part" id="p-la"><ruby>左<rt>ひだり</rt></ruby>うで まだ</div>
-        <div class="part" id="p-rl"><ruby>右<rt>みぎ</rt></ruby>あし まだ</div>
+        <div class="part" id="p-ra"><ruby>右<rt>みぎ</rt></ruby>うで まだ</div>
         <div class="part" id="p-ll"><ruby>左<rt>ひだり</rt></ruby>あし まだ</div>
+        <div class="part" id="p-rl"><ruby>右<rt>みぎ</rt></ruby>あし まだ</div>
       </div>
     </div>
   </div>
@@ -254,8 +254,8 @@ button:disabled{opacity:.4;cursor:default}
   <div class="mbox">
     <h3>つかいかた</h3>
     <ol class="help">
-      <li>iPadを <ruby>立<rt>た</rt></ruby>てて おいてね。</li>
-      <li>2mぐらい はなれて、あたまから <ruby>足<rt>あし</rt></ruby>まで うつるように してね。</li>
+      <li>iPadを たてに して、つくえや いすの <ruby>上<rt>うえ</rt></ruby>に <ruby>立<rt>た</rt></ruby>てて おいてね。</li>
+      <li>あたまから ひざまで うつるところまで はなれてね。</li>
       <li>お<ruby>手本<rt>てほん</rt></ruby>と おなじポーズを して、しばらく そのままで いてね。</li>
       <li>うまく できると「できた!」が でるよ。</li>
     </ol>
@@ -291,29 +291,30 @@ const MP_BASE = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VER}`
 const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task';
 
 /* 画面(鏡うつし)で見たときの部位。
-   画面の左側 = 本人の右側。角度は 0=右向き 90=下 180=左 270=上 */
+   鏡なので 画面の右側 = 本人の右側。角度は 0=右向き 90=下 180=左 270=上 */
 const SEGS = {
-  la1:[12,14], la2:[14,16],  // 画面左のうで(本人の右うで)
-  ra1:[11,13], ra2:[13,15],  // 画面右のうで(本人の左うで)
-  ll1:[24,26], ll2:[26,28],  // 画面左のあし(本人の右あし)
-  rl1:[23,25], rl2:[25,27],  // 画面右のあし(本人の左あし)
+  la1:[11,13], la2:[13,15],  // 画面左のうで(本人の左うで)
+  ra1:[12,14], ra2:[14,16],  // 画面右のうで(本人の右うで)
+  ll1:[23,25], ll2:[25,27],  // 画面左のあし(本人の左あし)
+  rl1:[24,26], rl2:[26,28],  // 画面右のあし(本人の右あし)
 };
+const LOWER = {la2:1, ra2:1, ll2:1, rl2:1};
 const STAND = {ll1:95, ll2:93, rl1:85, rl2:87};
 const POSES = [
   {id:'kiotsuke', name:'<ruby>気<rt>き</rt></ruby>をつけ', say:'きをつけ', a:{la1:97,la2:95,ra1:83,ra2:85,...STAND}},
   {id:'banzai', name:'ばんざい', say:'ばんざい', a:{la1:255,la2:262,ra1:285,ra2:278,...STAND}},
   {id:'yoko', name:'<ruby>両手<rt>りょうて</rt></ruby>を <ruby>横<rt>よこ</rt></ruby>に', say:'りょうてを よこに', a:{la1:180,la2:180,ra1:0,ra2:0,...STAND}},
-  {id:'migite', name:'<ruby>右手<rt>みぎて</rt></ruby>を <ruby>上<rt>うえ</rt></ruby>に', say:'みぎてを うえに', a:{la1:265,la2:268,ra1:83,ra2:85,...STAND}},
-  {id:'hidarite', name:'<ruby>左手<rt>ひだりて</rt></ruby>を <ruby>上<rt>うえ</rt></ruby>に', say:'ひだりてを うえに', a:{la1:97,la2:95,ra1:275,ra2:272,...STAND}},
+  {id:'migite', name:'<ruby>右手<rt>みぎて</rt></ruby>を <ruby>上<rt>うえ</rt></ruby>に', say:'みぎてを うえに', a:{la1:97,la2:95,ra1:275,ra2:272,...STAND}},
+  {id:'hidarite', name:'<ruby>左手<rt>ひだりて</rt></ruby>を <ruby>上<rt>うえ</rt></ruby>に', say:'ひだりてを うえに', a:{la1:265,la2:268,ra1:83,ra2:85,...STAND}},
   {id:'maru', name:'あたまの <ruby>上<rt>うえ</rt></ruby>で まる', say:'あたまの うえで まる', a:{la1:228,la2:318,ra1:312,ra2:222,...STAND}},
   {id:'guts', name:'ガッツポーズ', say:'ガッツポーズ', a:{la1:180,la2:270,ra1:0,ra2:270,...STAND}},
   {id:'koshi', name:'こしに <ruby>手<rt>て</rt></ruby>', say:'こしに て', a:{la1:120,la2:55,ra1:60,ra2:125,...STAND}},
   {id:'naname', name:'ななめの ポーズ', say:'ななめの ポーズ', a:{la1:225,la2:225,ra1:45,ra2:45,...STAND}},
   {id:'daiji', name:'<ruby>大<rt>だい</rt></ruby>の<ruby>字<rt>じ</rt></ruby>', say:'だいのじ', a:{la1:215,la2:215,ra1:325,ra2:325,ll1:122,ll2:122,rl1:58,rl2:58}},
-  {id:'migiashi', name:'<ruby>右<rt>みぎ</rt></ruby><ruby>足<rt>あし</rt></ruby>を <ruby>横<rt>よこ</rt></ruby>に', say:'みぎあしを よこに', legs:true, a:{la1:180,la2:180,ra1:0,ra2:0,ll1:135,ll2:135,rl1:88,rl2:88}},
-  {id:'hidariashi', name:'<ruby>左<rt>ひだり</rt></ruby><ruby>足<rt>あし</rt></ruby>を <ruby>横<rt>よこ</rt></ruby>に', say:'ひだりあしを よこに', legs:true, a:{la1:180,la2:180,ra1:0,ra2:0,ll1:92,ll2:92,rl1:45,rl2:45}},
+  {id:'migiashi', name:'<ruby>右<rt>みぎ</rt></ruby><ruby>足<rt>あし</rt></ruby>を <ruby>横<rt>よこ</rt></ruby>に', say:'みぎあしを よこに', legs:true, a:{la1:180,la2:180,ra1:0,ra2:0,ll1:92,ll2:92,rl1:45,rl2:45}},
+  {id:'hidariashi', name:'<ruby>左<rt>ひだり</rt></ruby><ruby>足<rt>あし</rt></ruby>を <ruby>横<rt>よこ</rt></ruby>に', say:'ひだりあしを よこに', legs:true, a:{la1:180,la2:180,ra1:0,ra2:0,ll1:135,ll2:135,rl1:88,rl2:88}},
 ];
-const TOL = {easy:40, normal:30, hard:22};
+const TOL = {easy:45, normal:35, hard:25};
 
 /* ===== 設定 ===== */
 const DEFAULTS = {count:5, hold:2, limit:30, level:'normal', part:'full', order:'random', video:true, sound:true, voice:true, poses:POSES.map(p=>p.id)};
@@ -455,6 +456,11 @@ async function ensureCamera(){
   if(stream && stream.active) return;
   if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('NOCAM');
   stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user', width:{ideal:1280}, height:{ideal:720}}, audio:false});
+  try{
+    const tr = stream.getVideoTracks()[0];
+    const cap = tr.getCapabilities ? tr.getCapabilities() : {};
+    if(cap.zoom && cap.zoom.min < (tr.getSettings().zoom||1)) await tr.applyConstraints({advanced:[{zoom:cap.zoom.min}]});
+  }catch(e){}
   video.srcObject = stream;
   try{ await video.play(); }catch(e){}
   const t0 = performance.now();
@@ -497,7 +503,7 @@ function detect(dt){
 }
 /* 画面(鏡うつし)のピクセル座標 */
 function sp(i){ const W=video.videoWidth, H=video.videoHeight; return [(1-lm[i].x)*W, lm[i].y*H]; }
-function vis(i){ const p=lm[i]; return p.v>0.5 && p.x>0.01 && p.x<0.99 && p.y>0.01 && p.y<0.99; }
+function vis(i, th=0.5){ const p=lm[i]; return p.v>th && p.x>0.0 && p.x<1.0 && p.y>0.0 && p.y<1.0; }
 
 function useLegs(){ return S.part==='full'; }
 /* 部位ごとの判定: true=あってる false=ちがう null=判定しない */
@@ -508,16 +514,20 @@ function judge(target){
     if(!useLegs() && k[1]==='l'){ ok[k]=null; continue; }
     if(!lm){ ok[k]=false; continue; }
     const [i,j] = SEGS[k];
-    if(!vis(i)||!vis(j)){ ok[k]=false; continue; }
+    if(!vis(i,0.3)||!vis(j,0.3)){
+      // 足首がうつっていないときは、ひざから下は判定しない
+      ok[k] = (k==='ll2'||k==='rl2') && vis(i,0.3) ? null : false;
+      continue;
+    }
     const a=sp(i), b=sp(j);
     const ang = Math.atan2(b[1]-a[1], b[0]-a[0])*180/Math.PI;
-    ok[k] = angDiff(ang, target[k]) <= tol;
+    ok[k] = angDiff(ang, target[k]) <= tol + (LOWER[k] ? 10 : 0);
   }
   return ok;
 }
 
 const BONES = [[11,12],[11,23],[12,24],[23,24],[12,14],[14,16],[11,13],[13,15],[24,26],[26,28],[23,25],[25,27]];
-const BONE_SEG = {'12-14':'la1','14-16':'la2','11-13':'ra1','13-15':'ra2','24-26':'ll1','26-28':'ll2','23-25':'rl1','25-27':'rl2'};
+const BONE_SEG = {'11-13':'la1','13-15':'la2','12-14':'ra1','14-16':'ra2','23-25':'ll1','25-27':'ll2','24-26':'rl1','26-28':'rl2'};
 function drawCam(cv, okMap){
   const W = video.videoWidth, H = video.videoHeight;
   if(!W) return;
@@ -574,8 +584,9 @@ function loop(t){
 let checkOkT = 0;
 function bodyVisible(){
   if(!lm) return false;
-  const need = useLegs() ? [0,11,12,23,24,25,26,27,28] : [0,11,12,13,14,15,16];
-  return need.every(vis);
+  // 全身:ひざまで うつればOK(足首は うつらなくてもよい)
+  const need = useLegs() ? [0,11,12,13,14,15,16,23,24,25,26] : [0,11,12,13,14,15,16];
+  return need.every(i=>vis(i,0.4));
 }
 function updateCheck(dt){
   drawCam($('checkCanvas'), null);
@@ -586,7 +597,7 @@ function updateCheck(dt){
   }else if(!bodyVisible()){
     checkOkT = 0;
     msg.className='msg';
-    msg.innerHTML = useLegs() ? 'あたまから <ruby>足<rt>あし</rt></ruby>まで うつるように、すこし はなれてね' : 'あたまと りょうてが うつるように してね';
+    msg.innerHTML = useLegs() ? 'あたまから ひざまで うつるように、すこし はなれてね' : 'あたまと りょうてが うつるように してね';
   }else{
     checkOkT += dt;
     if(checkOkT > 0.5){
@@ -627,7 +638,7 @@ function showErr(e){
 }
 
 /* ===== 活動 ===== */
-const G = {list:[], idx:0, hold:0, elapsed:0, grace:0, phase:'pose', fbT:0, results:[], lastSec:-1};
+const G = {list:[], idx:0, hold:0, miss:0, elapsed:0, grace:0, phase:'pose', fbT:0, results:[], lastSec:-1};
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 function makeList(){
   let pool = POSES.filter(p=>S.poses.includes(p.id));
@@ -655,7 +666,7 @@ function startGame(){
 }
 function startPose(){
   const p = G.list[G.idx];
-  G.hold = 0; G.elapsed = 0; G.grace = 1.0; G.phase='pose'; G.lastSec=-1;
+  G.hold = 0; G.miss = 0; G.elapsed = 0; G.grace = 1.0; G.phase='pose'; G.lastSec=-1;
   $('countText').textContent = `${G.idx+1} / ${G.list.length}`;
   $('poseName').innerHTML = p.name;
   $('feedback').classList.remove('show');
@@ -675,11 +686,11 @@ function updatePlay(dt){
   drawFigure($('targetCanvas'), p.a, okMap);
 
   const both = (a,b)=> okMap[a]!==false && okMap[b]!==false;
-  setPart('p-ra', both('la1','la2'), '<ruby>右<rt>みぎ</rt></ruby>うで');
-  setPart('p-la', both('ra1','ra2'), '<ruby>左<rt>ひだり</rt></ruby>うで');
+  setPart('p-ra', both('ra1','ra2'), '<ruby>右<rt>みぎ</rt></ruby>うで');
+  setPart('p-la', both('la1','la2'), '<ruby>左<rt>ひだり</rt></ruby>うで');
   if(useLegs()){
-    setPart('p-rl', both('ll1','ll2'), '<ruby>右<rt>みぎ</rt></ruby>あし');
-    setPart('p-ll', both('rl1','rl2'), '<ruby>左<rt>ひだり</rt></ruby>あし');
+    setPart('p-rl', both('rl1','rl2'), '<ruby>右<rt>みぎ</rt></ruby>あし');
+    setPart('p-ll', both('ll1','ll2'), '<ruby>左<rt>ひだり</rt></ruby>あし');
   }
 
   if(G.phase==='feedback'){
@@ -689,12 +700,14 @@ function updatePlay(dt){
   }
   G.elapsed += dt; G.grace -= dt;
   const matched = Object.values(okMap).every(v=>v!==false);
+  if(matched) G.miss = 0; else G.miss += dt;
+  const holding = matched || G.miss < 0.4;  // 0.4秒までのずれは そのまま数える
   if(G.grace <= 0){
-    if(matched) G.hold += dt;
-    else G.hold = Math.max(0, G.hold - dt*1.5);
+    if(holding) G.hold += dt;
+    else G.hold = Math.max(0, G.hold - dt*0.6);
   }
   const hm = $('holdMsg');
-  if(matched && G.grace<=0){ hm.className='holdmsg ok'; hm.textContent='そのまま!'; }
+  if(holding && G.grace<=0 && lm){ hm.className='holdmsg ok'; hm.textContent='そのまま!'; }
   else if(!lm){ hm.className='holdmsg'; hm.innerHTML='カメラに うつってね'; }
   else { hm.className='holdmsg'; hm.textContent='おなじポーズを してね'; }
   $('holdBar').style.width = Math.min(100, G.hold/S.hold*100) + '%';
