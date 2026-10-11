@@ -64,17 +64,34 @@ button:disabled{opacity:.4;cursor:default}
 #s-start{align-items:center;justify-content:center;gap:clamp(10px,2.2vh,24px);text-align:center;padding:16px 16px 56px}
 #s-start .topbtns{position:absolute;top:calc(16px + env(safe-area-inset-top));right:calc(16px + env(safe-area-inset-right));display:flex;gap:12px}
 #s-start h1{font-size:clamp(36px,6vw,64px);color:var(--main);letter-spacing:.05em}
-#s-start .lead{font-size:clamp(18px,2.6vw,26px);color:var(--sub);line-height:1.8}
 #startFigure{width:min(180px,28vw);height:min(130px,15vh)}
-.modes{display:flex;flex-direction:column;align-items:center;gap:10px;width:min(960px,100%)}
-.modes .mrow{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
-.modes button{background:var(--card);border:2px solid var(--line);font-weight:700;font-size:clamp(16px,2vw,20px);padding:8px 6px;line-height:1.3;width:clamp(104px,12.5vw,150px);min-height:64px}
-.modes button small{display:block;font-size:.72em;font-weight:400;color:var(--sub)}
-.modes button.on{background:var(--main);border-color:var(--main);color:#fff}
-.modes button.on small{color:#fff}
-.modes button.act{width:clamp(150px,20vw,210px);min-height:68px;font-size:clamp(19px,2.4vw,24px)}
-.modes button.act.on{background:var(--ok);border-color:var(--ok)}
-#levelBtns.off{visibility:hidden}
+.steps{display:flex;flex-direction:column;gap:clamp(8px,1.6vh,14px);width:min(900px,100%)}
+.step{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:clamp(8px,1.4vh,14px) clamp(10px,1.8vw,18px) clamp(10px,1.8vh,16px);transition:opacity .2s}
+.steplabel{display:flex;align-items:center;gap:10px;font-size:clamp(17px,2.2vw,22px);font-weight:700;margin-bottom:clamp(6px,1.2vh,10px);text-align:left}
+.steplabel .num{width:32px;height:32px;border-radius:50%;background:var(--sub);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;flex:none}
+.steplabel small{font-size:.72em;font-weight:400;color:var(--sub)}
+#stepAct .num{background:var(--ok)}
+#stepLv .num{background:var(--main)}
+.btnrow{display:grid;gap:8px}
+#actBtns{grid-template-columns:repeat(3,1fr)}
+#levelBtns{grid-template-columns:repeat(6,1fr)}
+.btnrow button{background:var(--soft);border:2px solid var(--line);font-weight:700;line-height:1.3;padding:8px 4px;min-width:0}
+.btnrow button small{display:block;font-size:.72em;font-weight:400;color:var(--sub)}
+.btnrow button.on small{color:#fff}
+#actBtns button{min-height:72px;font-size:clamp(19px,2.4vw,24px)}
+#levelBtns button{min-height:68px;font-size:clamp(16px,2vw,19px)}
+#actBtns button.on{background:var(--ok);border-color:var(--ok);color:#fff}
+#levelBtns button.on{background:var(--main);border-color:var(--main);color:#fff}
+.dots{display:flex;gap:3px;justify-content:center;margin-top:4px;height:8px}
+.dots i{width:8px;height:8px;border-radius:50%;background:#c3cfdd}
+.dots i.f{background:var(--main)}
+.on .dots i{background:rgba(255,255,255,.4)}
+.on .dots i.f{background:#fff}
+#stepLv.off{opacity:.38;pointer-events:none}
+@media (max-width:640px){
+  #levelBtns{grid-template-columns:repeat(3,1fr)}
+  #actBtns button small{font-size:.66em}
+}
 
 
 /* カメラ確認 */
@@ -197,14 +214,19 @@ button:disabled{opacity:.4;cursor:default}
   </div>
   <canvas id="startFigure"></canvas>
   <h1>まねっこポーズ</h1>
-  <p class="lead">やることを えらんで、「スタート」を おしてね。</p>
-  <div class="modes">
-    <div class="mrow" id="actBtns">
-      <button class="act" data-act="pose">まねっこ<small>1つずつ</small></button>
-      <button class="act" data-act="seq">れんぞく<small>じゅんばんに</small></button>
-      <button class="act" data-act="follow">ゆっくり<small>うごきに ついていく</small></button>
+  <div class="steps">
+    <div class="step" id="stepAct">
+      <div class="steplabel"><span class="num">1</span>やること</div>
+      <div class="btnrow" id="actBtns">
+        <button type="button" data-act="pose">まねっこ<small>1つずつ</small></button>
+        <button type="button" data-act="seq">れんぞく<small>じゅんばんに</small></button>
+        <button type="button" data-act="follow">ゆっくり<small>うごきに ついていく</small></button>
+      </div>
     </div>
-    <div class="mrow" id="levelBtns"><button data-mode="all">ランダム<small>ぜんぶから</small></button></div>
+    <div class="step" id="stepLv">
+      <div class="steplabel"><span class="num">2</span>レベル<small id="lvNote"></small></div>
+      <div class="btnrow" id="levelBtns"><button type="button" data-mode="all">ランダム<small>ぜんぶから</small><span class="dots"></span></button></div>
+    </div>
   </div>
   <button class="btn-main" id="startBtn">スタート</button>
   <p class="privacy">カメラの<ruby>映像<rt>えいぞう</rt></ruby>は このiPadの<ruby>中<rt>なか</rt></ruby>だけで<ruby>使<rt>つか</rt></ruby>い、<ruby>保存<rt>ほぞん</rt></ruby>したり <ruby>送<rt>おく</rt></ruby>ったり しません。</p>
@@ -1095,7 +1117,7 @@ $('setClose').addEventListener('click', ()=>{ document.activeElement && document
 const LV_RUBY = {1:'まねしやすい',2:'<ruby>左右<rt>さゆう</rt></ruby>ちがう',3:'まんなか こえる',4:'かんたん バランス',5:'バランス'};
 for(const L of LEVELS){
   const b = document.createElement('button'); b.type='button'; b.dataset.mode = L.lv;
-  b.innerHTML = `レベル${L.lv}<small>${LV_RUBY[L.lv]}</small>`;
+  b.innerHTML = `レベル${L.lv}<small>${LV_RUBY[L.lv]}</small><span class="dots">${[1,2,3,4,5].map(n=>`<i class="${n<=L.lv?'f':''}"></i>`).join('')}</span>`;
   $('levelBtns').appendChild(b);
 }
 function refreshModes(){
@@ -1112,7 +1134,8 @@ if(S.mode!=='all' && !LEVELS.some(L=>L.lv===S.mode)) S.mode='all';
 refreshModes();
 function refreshActs(){
   document.querySelectorAll('#actBtns button').forEach(b=>b.classList.toggle('on', b.dataset.act===S.act));
-  $('levelBtns').classList.toggle('off', S.act==='follow');
+  $('stepLv').classList.toggle('off', S.act==='follow');
+  $('lvNote').textContent = S.act==='follow' ? '(ゆっくりでは えらばないよ)' : '';
 }
 document.querySelectorAll('#actBtns button').forEach(b=>b.addEventListener('click', ()=>{ S.act=b.dataset.act; saveS(); refreshActs(); }));
 if(!['pose','seq','follow'].includes(S.act)) S.act='pose';
