@@ -335,6 +335,7 @@ button:disabled{opacity:.4;cursor:default}
     <div class="set-row"><div class="lbl">ゆっくり:動く速さ</div><div class="seg" id="sg-speed"></div></div>
     <div class="set-row"><div class="lbl">判定のきびしさ</div><div class="seg" id="sg-level"></div></div>
     <div class="set-row"><div class="lbl">判定する部分<small>座ったまま行うときは「うでだけ」</small></div><div class="seg" id="sg-part"></div></div>
+    <div class="set-row"><div class="lbl">使うカメラ<small>プロジェクターで見せるときは「後ろ」</small></div><div class="seg" id="sg-cam"></div></div>
     <div class="set-row"><div class="lbl">カメラ映像<small>「線だけ」にすると姿は表示しない</small></div><div class="seg" id="sg-video"></div></div>
     <div class="set-row"><div class="lbl">効果音</div><div class="seg" id="sg-sound"></div></div>
     <div class="set-row"><div class="lbl">読み上げ</div><div class="seg" id="sg-voice"></div></div>
@@ -412,7 +413,7 @@ const POSES = [
 const TOL = {easy:45, normal:35, hard:25};
 
 /* ===== 設定 ===== */
-const DEFAULTS = {act:'pose', mode:'all', seqLen:3, seqHold:1, seqShow:'show', speed:'slow', count:5, hold:5, limit:30, level:'normal', part:'full', order:'random', video:true, sound:true, voice:true, poses:POSES.map(p=>p.id)};
+const DEFAULTS = {cam:'user', act:'pose', mode:'all', seqLen:3, seqHold:1, seqShow:'show', speed:'slow', count:5, hold:5, limit:30, level:'normal', part:'full', order:'random', video:true, sound:true, voice:true, poses:POSES.map(p=>p.id)};
 const KEY = 'manekko_settings_v4', HELP_KEY = 'manekko_help_hide';
 function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
@@ -546,13 +547,16 @@ function drawFigure(cv, a, okMap, opts={}){
 }
 
 /* ===== カメラ・姿勢検出 ===== */
-let stream = null, landmarker = null;
+let stream = null, streamCam = '', landmarker = null;
 let lm = null, lostT = 0, lastVT = -1;
 
 async function ensureCamera(){
-  if(stream && stream.active) return;
+  const cam = S.cam==='environment' ? 'environment' : 'user';
+  if(stream && stream.active && streamCam===cam) return;
+  if(stream){ try{ stream.getTracks().forEach(t=>t.stop()); }catch(e){} stream = null; lm = null; }
   if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('NOCAM');
-  stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user', width:{ideal:1280}, height:{ideal:720}}, audio:false});
+  stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:cam}, width:{ideal:1280}, height:{ideal:720}}, audio:false});
+  streamCam = cam;
   try{
     const tr = stream.getVideoTracks()[0];
     const cap = tr.getCapabilities ? tr.getCapabilities() : {};
@@ -1107,6 +1111,7 @@ makeSeg($('sg-seqShow'),'seqShow',[['show','ずっと見せる'],['hide','最初
 makeSeg($('sg-speed'),'speed',[['slow','おそい'],['normal','ふつう'],['fast','はやい']]);
 makeSeg($('sg-level'),'level',[['easy','やさしい'],['normal','ふつう'],['hard','きびしい']]);
 makeSeg($('sg-part'),'part',[['full','全身'],['arms','うでだけ']]);
+makeSeg($('sg-cam'),'cam',[['user','前(画面がわ)'],['environment','後ろ']]);
 makeSeg($('sg-video'),'video',[[true,'映す'],[false,'線だけ']]);
 makeSeg($('sg-sound'),'sound',[[true,'ON'],[false,'OFF']]);
 makeSeg($('sg-voice'),'voice',[[true,'ON'],[false,'OFF']]);
