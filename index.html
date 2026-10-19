@@ -382,7 +382,7 @@ const POSES = [
   {lv:1, id:'maru', name:'あたまの <ruby>上<rt>うえ</rt></ruby>で まる', say:'あたまの うえで まる', a:{la1:228,la2:318,ra1:312,ra2:222,...STAND}},
   {lv:1, id:'koshi', name:'こしに <ruby>手<rt>て</rt></ruby>', say:'こしに て', a:{...ARM_HIP_L,...ARM_HIP_R,...STAND}},
   {lv:1, id:'guts', name:'ガッツポーズ', say:'ガッツポーズ', a:{la1:180,la2:270,ra1:0,ra2:270,...STAND}},
-  {lv:1, id:'shiko', name:'すもうの ポーズ', say:'すもうの ポーズ', legs:true, a:{la1:105,la2:100,ra1:75,ra2:80,ll1:155,ll2:95,rl1:25,rl2:85}},
+  {lv:1, id:'shiko', name:'すもうの ポーズ', say:'すもうの ポーズ', legs:true, a:{la1:105,la2:100,ra1:75,ra2:80,ll1:140,ll2:100,rl1:40,rl2:80}},
   {lv:1, id:'daiji', name:'<ruby>大<rt>だい</rt></ruby>の<ruby>字<rt>じ</rt></ruby>', say:'だいのじ', legs:true, a:{la1:215,la2:215,ra1:325,ra2:325,ll1:122,ll2:122,rl1:58,rl2:58}},
   // レベル2 左右ちがう
   {lv:2, id:'migite', name:'<ruby>右手<rt>みぎて</rt></ruby>を <ruby>上<rt>うえ</rt></ruby>に', say:'みぎてを うえに', a:{...ARM_DOWN_L,...ARM_UP_R,...STAND}},
@@ -391,8 +391,8 @@ const POSES = [
   {lv:2, id:'hue_myoko', name:'<ruby>左手<rt>ひだりて</rt></ruby>は <ruby>上<rt>うえ</rt></ruby>、<ruby>右手<rt>みぎて</rt></ruby>は <ruby>横<rt>よこ</rt></ruby>', say:'ひだりては うえ、みぎては よこ', a:{...ARM_UP_L,...ARM_SIDE_R,...STAND}},
   {lv:2, id:'myoko_hkoshi', name:'<ruby>右手<rt>みぎて</rt></ruby>は <ruby>横<rt>よこ</rt></ruby>、<ruby>左手<rt>ひだりて</rt></ruby>は こし', say:'みぎては よこ、ひだりては こし', a:{...ARM_HIP_L,...ARM_SIDE_R,...STAND}},
   {lv:2, id:'hyoko_mkoshi', name:'<ruby>左手<rt>ひだりて</rt></ruby>は <ruby>横<rt>よこ</rt></ruby>、<ruby>右手<rt>みぎて</rt></ruby>は こし', say:'ひだりては よこ、みぎては こし', a:{...ARM_SIDE_L,...ARM_HIP_R,...STAND}},
-  {lv:2, id:'lunge_m', name:'<ruby>右<rt>みぎ</rt></ruby>ひざを まげて <ruby>横<rt>よこ</rt></ruby>に', say:'みぎひざを まげて よこに', legs:true, a:{...ARM_HIP_L,...ARM_HIP_R,ll1:130,ll2:130,rl1:30,rl2:90}},
-  {lv:2, id:'lunge_h', name:'<ruby>左<rt>ひだり</rt></ruby>ひざを まげて <ruby>横<rt>よこ</rt></ruby>に', say:'ひだりひざを まげて よこに', legs:true, a:{...ARM_HIP_L,...ARM_HIP_R,ll1:150,ll2:90,rl1:50,rl2:50}},
+  {lv:2, id:'lunge_m', name:'<ruby>右<rt>みぎ</rt></ruby>ひざを まげて <ruby>横<rt>よこ</rt></ruby>に', say:'みぎひざを まげて よこに', legs:true, a:{...ARM_HIP_L,...ARM_HIP_R,ll1:125,ll2:125,rl1:45,rl2:90}},
+  {lv:2, id:'lunge_h', name:'<ruby>左<rt>ひだり</rt></ruby>ひざを まげて <ruby>横<rt>よこ</rt></ruby>に', say:'ひだりひざを まげて よこに', legs:true, a:{...ARM_HIP_L,...ARM_HIP_R,ll1:135,ll2:90,rl1:55,rl2:55}},
   // レベル3 正中線をこえる
   {lv:3, id:'m_hkata', name:'<ruby>右手<rt>みぎて</rt></ruby>を <ruby>左<rt>ひだり</rt></ruby>の かたに', say:'みぎてを ひだりの かたに', a:{...ARM_DOWN_L,ra1:135,ra2:225,...STAND}},
   {lv:3, id:'h_mkata', name:'<ruby>左手<rt>ひだりて</rt></ruby>を <ruby>右<rt>みぎ</rt></ruby>の かたに', say:'ひだりてを みぎの かたに', a:{la1:45,la2:315,...ARM_DOWN_R,...STAND}},
@@ -622,9 +622,17 @@ function judge(target, extra=0){
     }
     const a=sp(i), b=sp(j);
     const ang = Math.atan2(b[1]-a[1], b[0]-a[0])*180/Math.PI;
-    let t = tol + extra + (LOWER[k] ? 10 : 0);
-    if(k[1]==='l') t = Math.min(t, LOWER[k] ? 25 : 22);  // 足は 立っているだけで合わないように
-    ok[k] = angDiff(ang, target[k]) <= t;
+    const isLeg = k[1]==='l';
+    // ふともも(ll1・rl1)は 線が短くぶれやすいので +5度
+    const t = tol + extra + (LOWER[k] ? 10 : 0) + (isLeg && !LOWER[k] ? 5 : 0);
+    let good = angDiff(ang, target[k]) <= t;
+    if(good && isLeg){
+      // 足を動かすポーズでは、立っているだけで合わないように「動かした量」を見る
+      // (お手本の動きの4割以上、少なくとも10度 立ち姿勢から動いていればOK)
+      const dev = angDiff(target[k], STAND[k]);
+      if(dev >= 15) good = angDiff(ang, STAND[k]) >= Math.max(10, dev*0.4);
+    }
+    ok[k] = good;
   }
   return ok;
 }
