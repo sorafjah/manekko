@@ -71,6 +71,14 @@ button:disabled{opacity:.4;cursor:default}
 .steplabel .num{width:32px;height:32px;border-radius:50%;background:var(--sub);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;flex:none}
 .steplabel small{font-size:.72em;font-weight:400;color:var(--sub)}
 #stepAct .num{background:var(--ok)}
+.ptoggle{margin-left:auto;display:flex;gap:6px}
+.ptoggle button{min-height:40px;padding:4px 16px;font-size:clamp(15px,1.9vw,18px);font-weight:700;background:var(--soft);border:2px solid var(--line)}
+.ptoggle button.on{background:var(--sub);border-color:var(--sub);color:#fff}
+#actBtns button.hide{display:none}
+#actBtns.two{grid-template-columns:repeat(2,1fr)}
+.part.pa:not(.ok){border-color:#e07b1f;color:#a85810;background:#fdf1e5}
+.part.pb:not(.ok){border-color:#7d55c7;color:#5d3ca0;background:#f2edfb}
+.who-a{color:#c4650f}.who-b{color:#6a44b5}
 #stepLv .num{background:var(--main)}
 .btnrow{display:grid;gap:8px}
 #actBtns{grid-template-columns:repeat(3,1fr)}
@@ -216,11 +224,14 @@ button:disabled{opacity:.4;cursor:default}
   <h1>まねっこポーズ</h1>
   <div class="steps">
     <div class="step" id="stepAct">
-      <div class="steplabel"><span class="num">1</span>やること</div>
+      <div class="steplabel"><span class="num">1</span>やること
+        <span class="ptoggle" id="playerSeg"><button type="button" data-p="1">ひとり</button><button type="button" data-p="2">ふたり</button></span></div>
       <div class="btnrow" id="actBtns">
-        <button type="button" data-act="pose">まねっこ<small>1つずつ</small></button>
-        <button type="button" data-act="seq">れんぞく<small>じゅんばんに</small></button>
-        <button type="button" data-act="follow">ゆっくり<small>うごきに ついていく</small></button>
+        <button type="button" data-p="1" data-act="pose">まねっこ<small>1つずつ</small></button>
+        <button type="button" data-p="1" data-act="seq">れんぞく<small>じゅんばんに</small></button>
+        <button type="button" data-p="1" data-act="follow">ゆっくり<small>うごきに ついていく</small></button>
+        <button type="button" data-p="2" data-act="duo">いっしょに<small>2<ruby>人<rt>にん</rt></ruby>で おなじポーズ</small></button>
+        <button type="button" data-p="2" data-act="copy">ともだちを まねっこ<small>ともだちの ポーズを まねる</small></button>
       </div>
     </div>
     <div class="step" id="stepLv">
@@ -263,18 +274,20 @@ button:disabled{opacity:.4;cursor:default}
   </div>
   <div class="playmain">
     <div class="panel" id="targetPanel">
-      <div class="ptitle">お<ruby>手本<rt>てほん</rt></ruby></div>
+      <div class="ptitle" id="targetTitle">お<ruby>手本<rt>てほん</rt></ruby></div>
       <div class="strip" id="seqStrip"></div>
       <canvas id="targetCanvas"></canvas>
     </div>
     <div class="panel" id="camPanel">
-      <div class="ptitle">じぶん</div>
+      <div class="ptitle" id="camTitle">じぶん</div>
       <div class="camwrap"><canvas id="playCanvas"></canvas></div>
       <div class="parts">
         <div class="part" id="p-la"><ruby>左<rt>ひだり</rt></ruby>うで まだ</div>
         <div class="part" id="p-ra"><ruby>右<rt>みぎ</rt></ruby>うで まだ</div>
         <div class="part" id="p-ll"><ruby>左<rt>ひだり</rt></ruby>あし まだ</div>
         <div class="part" id="p-rl"><ruby>右<rt>みぎ</rt></ruby>あし まだ</div>
+        <div class="part pa off" id="p-A"></div>
+        <div class="part pb off" id="p-B"></div>
       </div>
     </div>
   </div>
@@ -316,6 +329,7 @@ button:disabled{opacity:.4;cursor:default}
       <li>あたまから ひざまで うつるところまで はなれてね。</li>
       <li>お<ruby>手本<rt>てほん</rt></ruby>と おなじポーズを して、しばらく そのままで いてね。</li>
       <li>うまく できると「できた!」が でるよ。</li>
+      <li>「ふたり」の ときは、2<ruby>人<rt>にん</rt></ruby>で <ruby>横<rt>よこ</rt></ruby>に ならんで うつってね。</li>
     </ol>
     <label class="checkline"><input type="checkbox" id="helpHide"><span><ruby>次<rt>つぎ</rt></ruby>から <ruby>出<rt>だ</rt></ruby>さない</span></label>
     <div class="mfoot"><button class="btn-main" id="helpClose" style="padding:10px 36px;font-size:22px">とじる</button></div>
@@ -570,6 +584,11 @@ async function ensureCamera(){
     await new Promise(r=>setTimeout(r,100));
   }
 }
+let curNum = 1;
+async function setNumPoses(n){
+  if(!landmarker || curNum===n) return;
+  try{ await landmarker.setOptions({numPoses:n}); curNum = n; }catch(e){}
+}
 async function ensureModel(){
   if(landmarker) return;
   const vision = await import(`${MP_BASE}/vision_bundle.mjs`);
@@ -585,23 +604,52 @@ function detect(dt){
   lastVT = video.currentTime;
   let res;
   try{ res = landmarker.detectForVideo(video, performance.now()); }catch(e){ return; }
+  if(isTwo()){ detectTwo(res, dt); return; }
   const L = res && res.landmarks && res.landmarks[0];
   if(L){
     lostT = 0;
-    if(!lm) lm = L.map(p=>({x:p.x,y:p.y,v:p.visibility??1}));
-    else{
-      const k = 0.55;
-      for(let i=0;i<L.length;i++){
-        lm[i].x += (L[i].x-lm[i].x)*k;
-        lm[i].y += (L[i].y-lm[i].y)*k;
-        lm[i].v = L[i].visibility??1;
-      }
-    }
+    lm = smoothLm(lm, L);
   }else{
     lostT += dt;
     if(lostT > 0.4) lm = null;
   }
 }
+function smoothLm(prev, L){
+  if(!prev) return L.map(p=>({x:p.x,y:p.y,v:p.visibility??1}));
+  const k = 0.55;
+  for(let i=0;i<L.length;i++){
+    prev[i].x += (L[i].x-prev[i].x)*k;
+    prev[i].y += (L[i].y-prev[i].y)*k;
+    prev[i].v = L[i].visibility??1;
+  }
+  return prev;
+}
+/* 2人:画面の左にいる人を 0、右にいる人を 1 にする */
+let lms = [null, null], lost2 = [0, 0];
+function centerX(L){ return 1 - (L[11].x + L[12].x)/2; }   // 画面(鏡うつし)での かたの まんなか
+function detectTwo(res, dt){
+  const arr = ((res && res.landmarks) || []).slice(0,2).map(L=>({L, c:centerX(L)})).sort((a,b)=>a.c-b.c);
+  const slot = [null, null];
+  if(arr.length===2){ slot[0] = arr[0].L; slot[1] = arr[1].L; }
+  else if(arr.length===1){
+    const c = arr[0].c;
+    const d = [0,1].map(s=>lms[s] ? Math.abs(centerX(lms[s]) - c) : Infinity);
+    let s = c < 0.5 ? 0 : 1;
+    if(d[0]!==Infinity || d[1]!==Infinity) s = d[0] <= d[1] ? 0 : 1;
+    slot[s] = arr[0].L;
+  }
+  for(const s of [0,1]){
+    if(slot[s]){ lost2[s] = 0; lms[s] = smoothLm(lms[s], slot[s]); }
+    else { lost2[s] += dt; if(lost2[s] > 0.4) lms[s] = null; }
+  }
+}
+/* lm を いれかえて 1人用の処理を使う */
+function using(L, fn){ const save = lm; lm = L; try{ return fn(); } finally{ lm = save; } }
+function isTwo(){ return S.act==='duo' || S.act==='copy'; }
+const WHO = ['ひだりの<ruby>人<rt>ひと</rt></ruby>', 'みぎの<ruby>人<rt>ひと</rt></ruby>'];
+const WHO_SAY = ['ひだりの ひと', 'みぎの ひと'];
+const WHO_TAG = [{text:'ひだり', color:'#e07b1f'}, {text:'みぎ', color:'#7d55c7'}];
+function who(s){ return `<span class="${s?'who-b':'who-a'}">${WHO[s]}</span>`; }
 /* 画面(鏡うつし)のピクセル座標 */
 function sp(i){ const W=video.videoWidth, H=video.videoHeight; return [(1-lm[i].x)*W, lm[i].y*H]; }
 function vis(i, th=0.5){ const p=lm[i]; return p.v>th && p.x>0.0 && p.x<1.0 && p.y>0.0 && p.y<1.0; }
@@ -613,6 +661,7 @@ function judge(target, extra=0){
   const ok = {};
   for(const k in SEGS){
     if(!useLegs() && k[1]==='l'){ ok[k]=null; continue; }
+    if(target[k]==null){ ok[k]=null; continue; }
     if(!lm){ ok[k]=false; continue; }
     const [i,j] = SEGS[k];
     if(!vis(i,0.3)||!vis(j,0.3)){
@@ -639,9 +688,9 @@ function judge(target, extra=0){
 
 const BONES = [[11,12],[11,23],[12,24],[23,24],[12,14],[14,16],[11,13],[13,15],[24,26],[26,28],[23,25],[25,27]];
 const BONE_SEG = {'11-13':'la1','13-15':'la2','12-14':'ra1','14-16':'ra2','23-25':'ll1','25-27':'ll2','24-26':'rl1','26-28':'rl2'};
-function drawCam(cv, okMap){
+function drawBg(cv){
   const W = video.videoWidth, H = video.videoHeight;
-  if(!W) return;
+  if(!W) return null;
   if(cv.width!==W || cv.height!==H){ cv.width=W; cv.height=H; }
   const ctx = cv.getContext('2d');
   if(S.video){
@@ -649,7 +698,19 @@ function drawCam(cv, okMap){
   }else{
     ctx.fillStyle='#e9eef5'; ctx.fillRect(0,0,W,H);
   }
-  if(!lm) return;
+  return ctx;
+}
+function drawCam(cv, okMap){
+  const ctx = drawBg(cv);
+  if(ctx && lm) drawSkel(ctx, okMap, null);
+}
+function drawCam2(cv, maps, tags){
+  const ctx = drawBg(cv);
+  if(!ctx) return;
+  for(const s of [0,1]) if(lms[s]) using(lms[s], ()=>drawSkel(ctx, maps[s], tags[s]));
+}
+function drawSkel(ctx, okMap, tag){
+  const H = video.videoHeight;
   const lw = Math.max(6, H*0.016);
   ctx.lineCap='round';
   for(const [i,j] of BONES){
@@ -668,8 +729,17 @@ function drawCam(cv, okMap){
     const r = Math.max(14, Math.hypot(s1[0]-s2[0], s1[1]-s2[1])*0.35);
     ctx.strokeStyle='rgba(20,40,70,.55)'; ctx.lineWidth=lw*0.6+5;
     ctx.beginPath(); ctx.arc(n[0],n[1],r,0,Math.PI*2); ctx.stroke();
-    ctx.strokeStyle='#ffffff'; ctx.lineWidth=lw*0.6;
+    ctx.strokeStyle= tag ? tag.color : '#ffffff'; ctx.lineWidth=lw*0.6;
     ctx.beginPath(); ctx.arc(n[0],n[1],r,0,Math.PI*2); ctx.stroke();
+    if(tag){
+      const fs = Math.max(20, H*0.045);
+      ctx.font = `700 ${fs}px "BIZ UDPGothic",sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const tw = ctx.measureText(tag.text).width + fs*0.9, th = fs*1.5, y = n[1] - r - th*0.8;
+      ctx.fillStyle = tag.color;
+      ctx.beginPath(); ctx.roundRect ? ctx.roundRect(n[0]-tw/2, y-th/2, tw, th, th/2) : ctx.rect(n[0]-tw/2, y-th/2, tw, th); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.fillText(tag.text, n[0], y);
+    }
   }
 }
 
@@ -700,6 +770,7 @@ function bodyVisible(){
   return need.every(i=>vis(i,0.4));
 }
 function updateCheck(dt){
+  if(isTwo()){ updateCheck2(dt); return; }
   drawCam($('checkCanvas'), null);
   const msg = $('checkMsg');
   if(!lm){
@@ -717,6 +788,26 @@ function updateCheck(dt){
     }
   }
 }
+function updateCheck2(dt){
+  drawCam2($('checkCanvas'), [null,null], WHO_TAG);
+  const msg = $('checkMsg');
+  const okS = [0,1].map(s=>lms[s] && using(lms[s], bodyVisible));
+  if(!lms[0] && !lms[1]){
+    checkOkT = 0; msg.className='msg'; msg.innerHTML='カメラの <ruby>前<rt>まえ</rt></ruby>に 2<ruby>人<rt>にん</rt></ruby>で ならんでね';
+  }else if(!lms[0] || !lms[1]){
+    checkOkT = 0; msg.className='msg'; msg.innerHTML='もう1<ruby>人<rt>にん</rt></ruby>も うつるように ならんでね';
+  }else if(!okS[0] || !okS[1]){
+    checkOkT = 0; msg.className='msg';
+    const s = okS[0] ? 1 : 0;
+    msg.innerHTML = `${who(s)}が ` + (useLegs() ? 'ひざまで うつるように、すこし はなれてね' : 'りょうてまで うつるように してね');
+  }else{
+    checkOkT += dt;
+    if(checkOkT > 0.5){
+      msg.className='msg ok'; msg.innerHTML='2<ruby>人<rt>にん</rt></ruby>とも うつったよ!「はじめる」を おしてね';
+      $('goBtn').disabled = false;
+    }
+  }
+}
 async function goCheck(){
   show('s-check');
   $('errBox').classList.remove('show');
@@ -728,6 +819,8 @@ async function goCheck(){
     await ensureCamera();
     msg.innerHTML='じゅんびしているよ… もうすこし まってね';
     await ensureModel();
+    await setNumPoses(isTwo() ? 2 : 1);
+    lm = null; lms = [null, null];
   }catch(e){
     showErr(e);
     return;
@@ -786,6 +879,8 @@ function makeItems(){
     for(let i=0;i<S.count;i++) items.push({type:'seq', poses:makeList(S.seqLen)});
     return items;
   }
+  if(S.act==='duo') return makeList(S.count).map(p=>({type:'duo', pose:p}));
+  if(S.act==='copy') return Array.from({length:S.count}, (_,i)=>({type:'copy', leader:i%2}));
   if(S.act==='follow'){
     const out = [];
     while(out.length < S.count) out.push(...shuffle(ROUTINES.slice()));
@@ -800,7 +895,11 @@ function releaseAwake(){ try{ wakeLock && wakeLock.release(); }catch(e){} wakeLo
 function startGame(){
   G.items = makeItems(); G.idx = 0; G.results = [];
   show('s-play');
-  ['p-ll','p-rl'].forEach(id=>$(id).classList.toggle('off', !useLegs()));
+  const two = isTwo();
+  ['p-la','p-ra'].forEach(id=>$(id).classList.toggle('off', two));
+  ['p-ll','p-rl'].forEach(id=>$(id).classList.toggle('off', two || !useLegs()));
+  ['p-A','p-B'].forEach(id=>$(id).classList.toggle('off', !two));
+  $('camTitle').innerHTML = two ? '2<ruby>人<rt>にん</rt></ruby>' : 'じぶん';
   $('timeRow').style.display = (S.act==='follow' || S.limit>0) ? 'flex' : 'none';
   $('seqStrip').classList.toggle('show', S.act==='seq');
   startItem();
@@ -870,8 +969,13 @@ function startItem(){
   $('feedback').classList.remove('show');
   $('holdBar').style.width = '0%';
   sePon();
-  if(it.type==='pose'){
+  $('targetTitle').innerHTML = it.type==='copy' ? `${who(it.leader)}の ポーズ` : 'お<ruby>手本<rt>てほん</rt></ruby>';
+  if(it.type==='pose' || it.type==='duo'){
     G.phase = 'pose'; $('poseName').innerHTML = it.pose.name; speak(it.pose.say);
+  }else if(it.type==='copy'){
+    G.phase = 'pose';
+    $('poseName').innerHTML = `${who(1-it.leader)}が まねっこ`;
+    speak(`${WHO_SAY[it.leader]}が ポーズを きめてね`);
   }else if(it.type==='seq'){
     buildStrip(it.poses);
     if(S.seqShow==='hide'){
@@ -895,9 +999,89 @@ function setPart(id, ok, label){
 }
 function setHold(text, ok){ const hm = $('holdMsg'); hm.className = 'holdmsg' + (ok ? ' ok' : ''); hm.innerHTML = text; }
 
+/* 2人:いっしょに / ともだちを まねっこ */
+const NEUTRAL = {...ARM_DOWN_L, ...ARM_DOWN_R, ...STAND};
+function anglesOf(){
+  const a = {};
+  for(const k in SEGS){
+    const [i,j] = SEGS[k];
+    if((!useLegs() && k[1]==='l') || !lm || !vis(i,0.3) || !vis(j,0.3)){ a[k] = null; continue; }
+    const p = sp(i), q = sp(j);
+    a[k] = Math.atan2(q[1]-p[1], q[0]-p[0])*180/Math.PI;
+  }
+  return a;
+}
+/* お手本の人が「気をつけ」のままではないか(まねする意味のあるポーズか) */
+function posed(a){
+  for(const k in a){
+    if(a[k]==null) continue;
+    if(angDiff(a[k], NEUTRAL[k]) >= (k[1]==='l' ? 20 : 35)) return true;
+  }
+  return false;
+}
+function fillPose(a){ const o = {...NEUTRAL}; for(const k in a) if(a[k]!=null) o[k] = a[k]; return o; }
+function allOk(m, minTrue=0){
+  if(!m) return false;
+  const v = Object.values(m);
+  return v.every(x=>x!==false) && v.filter(x=>x===true).length >= minTrue;
+}
+function setWho(id, s, text, ok){ const el = $(id); el.classList.toggle('ok', ok); el.innerHTML = `${WHO[s]} ${text}`; }
+
+function updateTwo(dt, it){
+  let target = null, leaderA = null;
+  const L = it.type==='copy' ? it.leader : -1, F = it.type==='copy' ? 1-it.leader : -1;
+  if(it.type==='duo') target = it.pose.a;
+  else if(lms[L]){ leaderA = using(lms[L], anglesOf); target = leaderA; }
+  const isPosed = it.type==='duo' || (leaderA && posed(leaderA));
+  const maps = [0,1].map(s=>{
+    if(s===L || !lms[s] || !target) return null;
+    return using(lms[s], ()=>judge(target));
+  });
+  const ok = [0,1].map(s=>allOk(maps[s], it.type==='copy' ? 2 : 0));
+  const tags = WHO_TAG.map((t,s)=> s===L ? {text:'おてほん', color:t.color} : t);
+  drawCam2($('playCanvas'), maps, tags);
+
+  if(it.type==='duo') drawFigure($('targetCanvas'), target, null);
+  else if(leaderA) drawFigure($('targetCanvas'), fillPose(leaderA), isPosed ? maps[F] : null);
+  else drawQ($('targetCanvas'));
+
+  for(const s of [0,1]){
+    const id = s ? 'p-B' : 'p-A';
+    if(s===L) setWho(id, s, isPosed ? 'おてほん' : 'ポーズを きめてね', false);
+    else setWho(id, s, ok[s] && isPosed ? 'OK' : 'まだ', ok[s] && isPosed);
+  }
+
+  if(G.phase==='feedback'){ G.fbT -= dt; if(G.fbT <= 0) nextItem(); return; }
+
+  G.elapsed += dt; G.grace -= dt;
+  const matched = it.type==='duo' ? (ok[0] && ok[1]) : (isPosed && ok[F]);
+  if(matched) G.miss = 0; else G.miss += dt;
+  const holding = matched || G.miss < 0.4;
+  if(G.grace <= 0){
+    if(holding) G.hold += dt;
+    else G.hold = Math.max(0, G.hold - dt*0.6);
+  }
+  if(!lms[0] || !lms[1]) setHold('2<ruby>人<rt>にん</rt></ruby>とも うつってね', false);
+  else if(holding && G.grace<=0) setHold(it.type==='duo' ? 'そろってる! そのまま!' : 'にてる! そのまま!', true);
+  else if(it.type==='copy' && !isPosed) setHold(`${who(L)}が ポーズを きめてね`, false);
+  else if(it.type==='copy') setHold(`${who(F)}が まねっこしてね`, false);
+  else if(ok[0] || ok[1]) setHold(`${who(ok[0]?0:1)}は できてるよ`, false);
+  else setHold('2<ruby>人<rt>にん</rt></ruby>で おなじポーズを してね', false);
+  $('holdBar').style.width = Math.min(100, G.hold/S.hold*100) + '%';
+
+  if(S.limit>0){
+    const left = Math.max(0, Math.ceil(S.limit - G.elapsed));
+    if(left !== G.lastSec){ G.lastSec = left; $('timeText').textContent = `のこり${left}秒`; }
+    $('timeBar').style.width = Math.max(0, (1 - G.elapsed/S.limit)*100) + '%';
+  }
+  if(G.hold >= S.hold) finishItem(true);
+  else if(S.limit>0 && G.elapsed >= S.limit) finishItem(false);
+}
+
 function updatePlay(dt){
   const it = G.items[G.idx];
   if(!it) return;
+  if(it.type==='duo' || it.type==='copy'){ updateTwo(dt, it); return; }
   let target, extra = 0, cur = null;
   if(it.type==='pose') target = it.pose.a;
   else if(it.type==='seq') target = it.poses[Math.min(G.step, it.poses.length-1)].a;
@@ -1020,6 +1204,8 @@ function nextItem(){
 function itemName(it){
   if(it.type==='pose') return it.pose.name;
   if(it.type==='seq') return it.poses.map(p=>p.name).join(' → ');
+  if(it.type==='duo') return `2<ruby>人<rt>にん</rt></ruby>で ${it.pose.name}`;
+  if(it.type==='copy') return `${who(1-it.leader)}が ${who(it.leader)}を まねっこ`;
   return it.routine.name;
 }
 function showResult(){
@@ -1147,12 +1333,23 @@ document.querySelectorAll('#levelBtns button').forEach(b=>b.addEventListener('cl
 if(S.mode!=='all' && !LEVELS.some(L=>L.lv===S.mode)) S.mode='all';
 refreshModes();
 function refreshActs(){
-  document.querySelectorAll('#actBtns button').forEach(b=>b.classList.toggle('on', b.dataset.act===S.act));
-  $('stepLv').classList.toggle('off', S.act==='follow');
-  $('lvNote').textContent = S.act==='follow' ? '(ゆっくりでは えらばないよ)' : '';
+  const pn = isTwo() ? '2' : '1';
+  document.querySelectorAll('#actBtns button').forEach(b=>{
+    b.classList.toggle('on', b.dataset.act===S.act);
+    b.classList.toggle('hide', b.dataset.p!==pn);
+  });
+  document.querySelectorAll('#playerSeg button').forEach(b=>b.classList.toggle('on', b.dataset.p===pn));
+  $('actBtns').classList.toggle('two', pn==='2');
+  const noLv = S.act==='follow' || S.act==='copy';
+  $('stepLv').classList.toggle('off', noLv);
+  $('lvNote').textContent = S.act==='follow' ? '(ゆっくりでは えらばないよ)' : S.act==='copy' ? '(ともだちを まねっこでは えらばないよ)' : '';
 }
 document.querySelectorAll('#actBtns button').forEach(b=>b.addEventListener('click', ()=>{ S.act=b.dataset.act; saveS(); refreshActs(); }));
-if(!['pose','seq','follow'].includes(S.act)) S.act='pose';
+document.querySelectorAll('#playerSeg button').forEach(b=>b.addEventListener('click', ()=>{
+  const want2 = b.dataset.p==='2';
+  if(want2 !== isTwo()){ S.act = want2 ? 'duo' : 'pose'; saveS(); refreshActs(); }
+}));
+if(!['pose','seq','follow','duo','copy'].includes(S.act)) S.act='pose';
 refreshActs();
 
 /* ===== スタート画面の絵 ===== */
